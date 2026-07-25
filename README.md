@@ -1,11 +1,11 @@
 
-# 🌍 AINA — Anticipatory Intelligence Network for Action
+# AINA — Anticipatory Intelligence Network for Action
 > **IGAD Hackathon 2026 | ICPAC Regional Track**  
 > *Transforming climate forecasts into accountable, explainable, and actor-specific action[cite: 1, 4].*
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 Across East Africa, credible drought and flood forecasts already exist from ICPAC, national meteorological services, and satellite monitoring[cite: 1]. **The bottleneck is not prediction—it is what happens after the forecast lands on someone’s desk[cite: 1].** 
 
 Traditional dashboards show risk, but they do not decide anything[cite: 1, 3, 4]. This creates a **forecast-to-action gap**, resulting in delayed emergency response, higher humanitarian costs, livestock loss, and preventable displacement[cite: 1].
@@ -14,7 +14,7 @@ Traditional dashboards show risk, but they do not decide anything[cite: 1, 3, 4]
 
 ---
 
-## 🛠 Project Composition & System Architecture
+##  Project Composition & System Architecture
 
 AINA consists of three main operational layers:
 
@@ -48,7 +48,7 @@ AINA consists of three main operational layers:
 
 ---
 
-## 👥 Team Skill Division & Responsibilities
+##  Team Skill Division & Responsibilities
 
 Our team leverages a high-synergy balance of **Geospatial Science (GIS)** and **Software & Artificial Intelligence Development**.
 
@@ -61,7 +61,7 @@ Our team leverages a high-synergy balance of **Geospatial Science (GIS)** and **
 
 ---
 
-## 📅 6-Day Sprint Workplan (Lean Prototype Strategy)
+##  6-Day Sprint Workplan (Lean Prototype Strategy)
 
 To ensure maximum visual polish, technical depth, and submission readiness within 6 days, we are executing a **Lean Architecture Strategy** (utilizing static pre-processed spatial data + API-driven LLM decision reasoning).
 
@@ -108,7 +108,7 @@ Day 6: Pitch & Submission ◄── Day 5: Polish & Architecture ◄── Day 4
 
 ---
 
-## 💻 Tech Stack Specification
+##  Tech Stack Specification
 
 * **Frontend:** React, TypeScript, Vite, Tailwind CSS, React-Leaflet / Mapbox GL, Lucide Icons
 * **Backend:** Python 3.11+, FastAPI, Uvicorn, OpenAI SDK, Pydantic, Python-Dotenv
@@ -116,7 +116,7 @@ Day 6: Pitch & Submission ◄── Day 5: Polish & Architecture ◄── Day 4
 
 ---
 
-## 🏆 Alignment with Hackathon Judging Criteria
+##  Alignment with Hackathon Judging Criteria
 
 1. **Technical Depth & Engineering (30%):** Robust React-FastAPI architecture, smooth API integration, structured data contracts, and clean spatial rendering.
 2. **Innovation & AI Creativity (30%):** Moving beyond basic visualization to automated, explainable decision-reasoning pipelines using structured AI[cite: 1, 3, 4].
