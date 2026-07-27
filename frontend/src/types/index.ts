@@ -1,29 +1,18 @@
 export interface Recommendation {
-  id: string
-  rank: number
-  actor: string
-  action: string
-  reasoning: string
-  status: 'pending' | 'approved'
+  id: string;
+  rank: number;
+  actor: string;
+  action: string;
+  reasoning: string;
+  status: "pending" | "approved" | "rejected";
 }
 
-export interface RiskState {
-  level: 'Low' | 'Medium' | 'High'
-  description: string
-}
+export type RiskLevel = "Normal" | "Elevated" | "High" | "Critical";
 
-export interface GeoJsonGeometry {
-  type: string
-  coordinates: unknown
-}
-
-export interface GeoJsonFeature {
-  type: 'Feature'
-  properties?: Record<string, unknown>
-  geometry: GeoJsonGeometry
-}
-
-export interface GeoJsonFeatureCollection {
-  type: 'FeatureCollection'
-  features: GeoJsonFeature[]
+export interface RegionData {
+  id: string;
+  name: string;
+  hazardType: string;
+  severity: RiskLevel;
+  context: string;
 }
