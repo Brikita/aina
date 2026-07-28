@@ -1,90 +1,116 @@
-import axios from 'axios'
-import { useMemo, useState, type ComponentType } from 'react'
-import { GeoJSON, MapContainer, TileLayer } from 'react-leaflet'
-import type { GeoJsonFeatureCollection } from '../../types'
-import { LayerControls } from './LayerControls'
+import { useMemo, type ReactNode, type ComponentType } from 'react'
+import { GeoJSON, MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import type { GeoJSONProps } from 'react-leaflet/GeoJSON'
+import type { MapContainerProps } from 'react-leaflet/MapContainer'
+import type { MarkerProps } from 'react-leaflet/Marker'
+import type { PopupProps } from 'react-leaflet/Popup'
+import type { TileLayerProps } from 'react-leaflet/TileLayer'
+import { useAppContext } from '../../context/AppContext'
+import type { RegionData } from '../../types'
 import 'leaflet/dist/leaflet.css'
 
-interface AinaMapProps {
-  geoJson: GeoJsonFeatureCollection
+interface LeafletMapContainerProps {
+  center: [number, number]
+  zoom: number
+  className?: string
+  children?: ReactNode
 }
 
-const defaultCenter: [number, number] = [1.2921, 36.8219]
-
-const streetTiles = {
-  url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  attribution: '&copy; OpenStreetMap contributors',
+interface LeafletTileLayerProps {
+  url: string
+  attribution: string
 }
 
-const satelliteTiles = {
-  url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  attribution: 'Tiles &copy; Esri',
+interface LeafletGeoJsonProps {
+  data: object
+  style: () => { color: string; weight: number; fillColor: string; fillOpacity: number }
+  eventHandlers: { click: () => void }
 }
 
-const SafeMapContainer = MapContainer as ComponentType<any>
-const SafeTileLayer = TileLayer as ComponentType<any>
-const SafeGeoJSON = GeoJSON as ComponentType<any>
+interface LeafletMarkerProps {
+  position: [number, number]
+  children?: ReactNode
+}
 
-export function AinaMap({ geoJson }: AinaMapProps) {
-  const [showGeoJson, setShowGeoJson] = useState(true)
-  const [useSatelliteBase, setUseSatelliteBase] = useState(false)
+interface LeafletPopupProps {
+  children?: ReactNode
+}
 
-  const tileLayer = useMemo(() => (useSatelliteBase ? satelliteTiles : streetTiles), [useSatelliteBase])
+const LeafletMapContainer = MapContainer as unknown as ComponentType<LeafletMapContainerProps & MapContainerProps>
+const LeafletTileLayer = TileLayer as unknown as ComponentType<LeafletTileLayerProps & TileLayerProps>
+const LeafletGeoJSON = GeoJSON as unknown as ComponentType<LeafletGeoJsonProps & GeoJSONProps>
+const LeafletMarker = Marker as unknown as ComponentType<LeafletMarkerProps & MarkerProps>
+const LeafletPopup = Popup as unknown as ComponentType<LeafletPopupProps & PopupProps>
+
+const center: [number, number] = [1.2921, 36.8219]
+
+const baseRegion: RegionData = {
+  id: 'kajiado-county',
+  name: 'Kajiado',
+  hazardType: 'Flood',
+  severity: 'High',
+  context: 'County flood watch intersects low-lying drainage and settlement corridors.',
+}
+
+const kajiadoPolygon = {
+  type: 'Feature',
+  properties: {
+    id: baseRegion.id,
+    name: baseRegion.name,
+    hazardType: baseRegion.hazardType,
+    severity: baseRegion.severity,
+    context: baseRegion.context,
+  },
+  geometry: {
+    type: 'Polygon',
+    coordinates: [
+      [
+        [36.35, -1.95],
+        [36.82, -1.98],
+        [36.98, -2.22],
+        [36.58, -2.32],
+        [36.35, -1.95],
+      ],
+    ],
+  },
+} as const
+
+export function AinaMap() {
+  const { setActiveRegion, fetchDecisionIntelligence } = useAppContext()
+
+  const polygonStyle = useMemo(
+    () => ({
+      color: '#f59e0b',
+      weight: 2,
+      fillColor: '#fbbf24',
+      fillOpacity: 0.25,
+    }),
+    [],
+  )
+
+  const handleClick = () => {
+    setActiveRegion(baseRegion)
+    void fetchDecisionIntelligence(baseRegion)
+  }
 
   return (
-    <section className="relative h-full min-h-[28rem] overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
-      <SafeMapContainer center={defaultCenter} zoom={7} className="h-full w-full">
-        <SafeTileLayer attribution={tileLayer.attribution} url={tileLayer.url} />
-        {showGeoJson ? (
-          <SafeGeoJSON
-            data={geoJson}
-            style={() => ({
-              color: '#0ea5e9',
-              weight: 2,
-              fillColor: '#38bdf8',
-              fillOpacity: 0.22,
-            })}
-            onEachFeature={(feature: any, layer: any) => {
-              layer.on({
-                click: () => {
-                  void axios.post('/api/geospatial/analyze', {
-                    feature,
-                    message: 'Polygon clicked from AINA map shell',
-                  })
-                },
-                mouseover: () => {
-                  layer.setStyle({
-                    weight: 3,
-                    color: '#f97316',
-                    fillOpacity: 0.35,
-                  })
-                },
-                mouseout: () => {
-                  layer.setStyle({
-                    weight: 2,
-                    color: '#0ea5e9',
-                    fillOpacity: 0.22,
-                  })
-                },
-              })
-            }}
-          />
-        ) : null}
-      </SafeMapContainer>
+    <section className="relative h-full min-h-0 overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 shadow-xl">
+      <LeafletMapContainer center={center} zoom={6} className="h-full w-full">
+        <LeafletTileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap &copy; CARTO"
+        />
 
-      <div className="pointer-events-none absolute inset-x-4 top-4 flex items-start justify-between gap-4">
-        <div className="rounded-2xl bg-slate-950/70 px-4 py-3 text-sm text-slate-100 backdrop-blur-md">
-          <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">Map Intelligence</p>
-          <p className="mt-1 text-slate-200">East Africa center on Nairobi for flood and drought monitoring.</p>
-        </div>
-        <div className="pointer-events-auto">
-          <LayerControls
-            showGeoJson={showGeoJson}
-            onToggleGeoJson={() => setShowGeoJson((current) => !current)}
-            useSatelliteBase={useSatelliteBase}
-            onToggleSatelliteBase={() => setUseSatelliteBase((current) => !current)}
-          />
-        </div>
+        <LeafletGeoJSON data={kajiadoPolygon} style={() => polygonStyle} eventHandlers={{ click: handleClick }} />
+
+        <LeafletMarker position={center}>
+          <LeafletPopup>Nairobi operational hub</LeafletPopup>
+        </LeafletMarker>
+      </LeafletMapContainer>
+
+      <div className="pointer-events-none absolute left-4 top-4 max-w-sm rounded-2xl bg-slate-950/70 px-4 py-3 text-sm text-slate-100 backdrop-blur-sm">
+        <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">Map Intelligence</p>
+        <p className="mt-1 text-slate-200">Click the highlighted county polygon to generate decision intelligence.</p>
       </div>
     </section>
   )
