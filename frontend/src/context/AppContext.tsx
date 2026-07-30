@@ -7,17 +7,30 @@ import {
   type ReactNode,
 } from "react";
 import type { Recommendation, RegionData, RiskLevel } from "../types";
+import type { UserLanguage, UserRole } from "../types";
+
+export type SimulationScenario =
+  | "None"
+  | "Turkana Flood"
+  | "Marsabit Drought"
+  | "Kajiado Conflict";
 
 interface AppContextValue {
   isSimulationMode: boolean;
+  activeScenario: SimulationScenario;
   activeRegion: RegionData | null;
   recommendations: Recommendation[];
   riskLevel: RiskLevel;
   isAnalyzing: boolean;
+  userRole: UserRole;
+  language: UserLanguage;
   toggleSimulationMode: () => void;
+  setActiveScenario: (scenario: SimulationScenario) => void;
   setActiveRegion: (region: RegionData | null) => void;
   approveAction: (id: string) => void;
   fetchDecisionIntelligence: (regionData: RegionData) => Promise<void>;
+  setUserRole: (role: UserRole) => void;
+  setLanguage: (language: UserLanguage) => void;
 }
 
 interface DecisionIntelligenceResponse {
@@ -92,6 +105,8 @@ function normalizeRecommendations(
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [isSimulationMode, setIsSimulationMode] = useState(false);
+  const [activeScenario, setActiveScenario] =
+    useState<SimulationScenario>("None");
   const [activeRegion, setActiveRegionState] = useState<RegionData | null>(
     null,
   );
@@ -100,6 +115,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   );
   const [riskLevel, setRiskLevel] = useState<RiskLevel>("High");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>("County Lead");
+  const [language, setLanguage] = useState<UserLanguage>("English");
 
   const toggleSimulationMode = () => {
     setIsSimulationMode((current) => !current);
@@ -156,16 +173,31 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       isSimulationMode,
+      activeScenario,
       activeRegion,
       recommendations,
       riskLevel,
       isAnalyzing,
+      userRole,
+      language,
       toggleSimulationMode,
+      setActiveScenario,
       setActiveRegion,
       approveAction,
       fetchDecisionIntelligence,
+      setUserRole,
+      setLanguage,
     }),
-    [activeRegion, isAnalyzing, isSimulationMode, recommendations, riskLevel],
+    [
+      activeRegion,
+      activeScenario,
+      isAnalyzing,
+      isSimulationMode,
+      language,
+      recommendations,
+      riskLevel,
+      userRole,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
@@ -179,4 +211,32 @@ export function useAppContext() {
   }
 
   return context;
+}
+
+export function useRole() {
+  const { userRole, setUserRole } = useAppContext();
+
+  return { userRole, setUserRole };
+}
+
+export function useLanguage() {
+  const { language, setLanguage } = useAppContext();
+
+  return { language, setLanguage };
+}
+
+export function useSimulation() {
+  const {
+    isSimulationMode,
+    activeScenario,
+    toggleSimulationMode,
+    setActiveScenario,
+  } = useAppContext();
+
+  return {
+    isSimulationMode,
+    activeScenario,
+    toggleSimulationMode,
+    setActiveScenario,
+  };
 }
