@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { SimulationBanner } from "../ui/SimulationBanner";
 
 export function MainLayout() {
   return (
@@ -8,7 +9,8 @@ export function MainLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar />
-        <main className="min-h-0 flex-1 overflow-hidden p-4">
+        <SimulationBanner />
+        <main className="min-h-0 flex-1 overflow-y-auto p-4">
           <Outlet />
         </main>
       </div>
