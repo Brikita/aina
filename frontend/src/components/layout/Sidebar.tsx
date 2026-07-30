@@ -4,20 +4,21 @@ import {
   Globe2,
   ShieldAlert,
   Sparkles,
+  MessageSquareText,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useAppContext } from "../../context/AppContext";
-import { Button } from "../ui/Button";
+import { useSimulation } from "../../context/AppContext";
 import { useState } from "react";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: BarChart3 },
+  { to: "/sms-simulator", label: "SMS Simulator", icon: MessageSquareText },
   { to: "/playbooks", label: "Playbooks", icon: Compass },
   { to: "/observatory", label: "Observatory", icon: Globe2 },
 ];
 
 export function Sidebar() {
-  const { isSimulationMode, toggleSimulationMode } = useAppContext();
+  const { isSimulationMode, toggleSimulationMode } = useSimulation();
   const [isToggleFocused, setIsToggleFocused] = useState(false);
 
   return (
@@ -69,6 +70,7 @@ export function Sidebar() {
           role="switch"
           aria-checked={isSimulationMode}
           onClick={toggleSimulationMode}
+          onChange={toggleSimulationMode}
           onFocus={() => setIsToggleFocused(true)}
           onBlur={() => setIsToggleFocused(false)}
           className="flex w-full items-center justify-between rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-left transition hover:border-slate-600 hover:bg-slate-700"
@@ -100,12 +102,12 @@ export function Sidebar() {
           </span>
         </button>
 
-        <Button
-          variant="outline"
-          className="mt-3 w-full justify-center border-slate-700 text-slate-100 hover:bg-slate-800"
+        <NavLink
+          to="/readiness"
+          className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
         >
           Operational Readiness
-        </Button>
+        </NavLink>
       </div>
     </aside>
   );
