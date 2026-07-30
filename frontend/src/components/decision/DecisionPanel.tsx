@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useAppContext } from "../../context/AppContext";
+import { useAppContext, useLanguage, useRole } from "../../context/AppContext";
 import { Badge } from "../ui/Badge";
 import { RecommendationCard } from "./RecommendationCard";
 
@@ -16,8 +16,26 @@ function riskSummary(riskLevel: string) {
   }
 }
 
+function titleCopy(language: string) {
+  return language === "Swahili" ? "Hatari ya Mafuriko" : "Flood Risk";
+}
+
+function roleCopy(role: string) {
+  if (role === "National Director") {
+    return "Ensemble Confidence 84%";
+  }
+
+  if (role === "County Lead") {
+    return "Actionable Logistics: Pre-position water trucks";
+  }
+
+  return "Field movement tracked and ready for escalation";
+}
+
 export function DecisionPanel() {
   const { recommendations, riskLevel, isAnalyzing } = useAppContext();
+  const { userRole } = useRole();
+  const { language } = useLanguage();
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
@@ -26,13 +44,16 @@ export function DecisionPanel() {
           Decision Workflow
         </p>
         <h2 className="mt-2 text-xl font-bold text-slate-900">
-          Risk Classification
+          {titleCopy(language)}
         </h2>
         <div className="mt-3">
           <Badge variant={riskLevel} />
         </div>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           {riskSummary(riskLevel)}
+        </p>
+        <p className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
+          {roleCopy(userRole)}
         </p>
       </div>
 
