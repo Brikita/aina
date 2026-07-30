@@ -1,5 +1,6 @@
-import { BellRing, Clock3, UserCircle2 } from "lucide-react";
+import { BellRing, Clock3, Globe2, UserCircle2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useLanguage, useRole } from "../../context/AppContext";
 
 const alerts = [
   "Tana River flood watch elevated to amber status.",
@@ -9,6 +10,8 @@ const alerts = [
 
 export function Topbar() {
   const [now, setNow] = useState(new Date());
+  const { userRole, setUserRole } = useRole();
+  const { language, setLanguage } = useLanguage();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -61,6 +64,35 @@ export function Topbar() {
             <p className="text-sm font-medium">Response Lead</p>
           </div>
         </div>
+
+        <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+          <Users className="h-4 w-4 text-slate-500" />
+          <select
+            value={userRole}
+            onChange={(event) =>
+              setUserRole(event.target.value as typeof userRole)
+            }
+            className="bg-transparent text-sm font-medium uppercase tracking-normal text-slate-700 outline-none"
+          >
+            <option value="National Director">National Director</option>
+            <option value="County Lead">County Lead</option>
+            <option value="Field Officer">Field Officer</option>
+          </select>
+        </label>
+
+        <label className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+          <Globe2 className="h-4 w-4 text-slate-500" />
+          <select
+            value={language}
+            onChange={(event) =>
+              setLanguage(event.target.value as typeof language)
+            }
+            className="bg-transparent text-sm font-medium uppercase tracking-normal text-slate-700 outline-none"
+          >
+            <option value="English">English</option>
+            <option value="Swahili">Swahili</option>
+          </select>
+        </label>
       </div>
     </header>
   );
