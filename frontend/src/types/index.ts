@@ -9,6 +9,10 @@ export interface Recommendation {
 
 export type RiskLevel = "Normal" | "Elevated" | "High" | "Critical";
 
+export type UserRole = "National Director" | "County Lead" | "Field Officer";
+
+export type UserLanguage = "English" | "Swahili";
+
 export interface RegionData {
   id: string;
   name: string;
