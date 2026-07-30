@@ -1,0 +1,218 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.map-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #f0f0f0;
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ui-overlay > * {
+  pointer-events: auto;
+}
+
+/* Leaflet Draw Toolbar */
+.leaflet-draw-toolbar a {
+  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png') !important;
+}
+
+.leaflet-control-fullscreen {
+  background: white !important;
+  border-radius: 4px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
+}
+
+.leaflet-control-fullscreen a {
+  color: #333 !important;
+  font-size: 18px !important;
+  padding: 8px 10px !important;
+}
+
+.leaflet-control-draw {
+  margin-top: 15px !important;
+}
+
+.leaflet-control-fullscreen {
+  margin-top: 15px !important;
+}
+
+.leaflet-control-attribution {
+  bottom: 0 !important;
+  font-size: 10px !important;
+  background: rgba(255,255,255,0.7) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px 0 0 0 !important;
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .leaflet-control-draw {
+    margin-top: 20px !important;
+  }
+  .leaflet-control-fullscreen {
+    margin-top: 20px !important;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .leaflet-control-draw {
+    margin-top: 15px !important;
+  }
+  .leaflet-control-fullscreen {
+    margin-top: 15px !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .leaflet-control-draw {
+    margin-top: 10px !important;
+  }
+  .leaflet-control-fullscreen {
+    margin-top: 10px !important;
+  }
+  .leaflet-control-attribution {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .leaflet-control-draw {
+    margin-top: 8px !important;
+  }
+  .leaflet-control-fullscreen {
+    margin-top: 8px !important;
+  }
+  .leaflet-touch .leaflet-control-zoom {
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Mobile touch */
+@media (max-width: 768px) {
+  button, input[type="checkbox"], input[type="range"] {
+    touch-action: manipulation;
+  }
+  .leaflet-draw-toolbar a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+  }
+  .leaflet-touch .leaflet-control-draw .leaflet-draw-actions a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+  }
+}
+
+/* Custom marker styles */
+.custom-marker {
+  background: transparent;
+  border: none;
+}
+
+.cluster-marker {
+  background: transparent;
+  border: none;
+}
+
+.custom-marker:hover div {
+  transform: scale(1.3);
+  transition: transform 0.2s ease;
+}
+
+/* ===== PMTiles Overlay Styles ===== */
+#pmtiles-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#pmtiles-overlay .maplibregl-canvas {
+  pointer-events: none;
+}
+
+#pmtiles-overlay .maplibregl-map {
+  background: transparent !important;
+}
+
+#pmtiles-overlay .maplibregl-map canvas {
+  opacity: 1 !important;
+}
+
+/* Print */
+@media print {
+  .leaflet-control-container {
+    display: none !important;
+  }
+}

@@ -1,0 +1,57 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Data sources (large files - DO NOT COMMIT)
+data_sources/*.geojson
+data_sources/*.pmtiles
+data_sources/KE_ADMINISTRATIVE/
+data_sources/KE_HEALTH\ FACILITIES/
+data_sources/KE_ROADS/
+data_sources/KE_RIVERS/
+data_sources/KE_LIVELIHOOD/
+data_sources/KE_POPULATION/
+data_sources/KE_FORESTS/
+data_sources/KE_LAKES/
+data_sources/KE_SCHOOLS/
+data_sources/KE_TOPO\ MAPS/
+data_sources/KENYA\ COUNTIES/
+data_sources/UGANDA/
+data_sources/ETHIOPIA/
+data_sources/SUDAN/
+data_sources/DJIBOUTI/
+data_sources/ERITREA/
+data_sources/SOMALIA/
+data_sources/SOUTH_SUDAN/
+
+# PMTiles
+*.pmtiles
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Backend
+backend/.venv/
+backend/venv/
+backend/.env

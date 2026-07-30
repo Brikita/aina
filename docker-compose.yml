@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS extension
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: aina-postgres
+    environment:
+      POSTGRES_DB: aina
+      POSTGRES_USER: aina_user
+      POSTGRES_PASSWORD: aina_password_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aina_user -d aina"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and message brokering
+  redis:
+    image: redis:7-alpine
+    container_name: aina-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
