@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from openai import OpenAI
@@ -9,21 +9,38 @@ from prompts import SYSTEM_PROMPT
 
 router = APIRouter(prefix="/api", tags=["Decision Engine"])
 
-# --- Request / Response Models ---
+# --- Request Models Aligned with GIS Specialist Payload ---
 
-class ContextData(BaseModel):
-    ndvi_anomaly: Optional[float] = Field(default=None, description="NDVI anomaly deviation score e.g. -0.25")
-    soil_moisture_index: Optional[float] = Field(default=None, description="Soil moisture index (0 to 1)")
-    rainfall_deficit_pct: Optional[float] = Field(default=None, description="Forecasted rainfall deficit percentage")
-    affected_population: Optional[int] = Field(default=None, description="Estimated population in risk zone")
+class ImpactData(BaseModel):
+    total_assets: int = Field(..., description="Total count of assets in warning zone")
+    asset_counts: Dict[str, int] = Field(
+        default_factory=dict, 
+        example={"HOSPITAL": 3, "SCHOOL": 57, "BRIDGE": 8}
+    )
 
-class DecisionRequest(BaseModel):
-    region_id: str = Field(..., example="KE-KAJ-01", description="Administrative unit ID")
-    region_name: str = Field(..., example="Kajiado County", description="Human-readable region name")
-    hazard_type: str = Field(..., example="drought", description="Hazard type (e.g., drought, flood)")
-    risk_level: str = Field(..., example="high", description="Current classified risk level")
-    context: ContextData
-    active_playbooks: Optional[List[str]] = Field(default=[], description="List of pre-approved playbook IDs")
+class ExposureData(BaseModel):
+    exposure_score: int = Field(..., example=82, description="Calculated exposure score (0-100)")
+    critical_assets: int = Field(..., example=68, description="Number of critical assets exposed")
+
+class CriticalAssetItem(BaseModel):
+    name: str = Field(..., example="Lodwar County Hospital")
+    type: str = Field(..., example="HOSPITAL")
+
+class GISDecisionRequest(BaseModel):
+    warning_id: Optional[int] = Field(default=None, example=15)
+    county: str = Field(..., example="Turkana")
+    subcounty: str = Field(..., example="Loima")
+    hazard: str = Field(..., example="Flood")
+    severity: str = Field(..., example="High")
+    impact: ImpactData
+    exposure: ExposureData
+    critical_assets: List[CriticalAssetItem] = []
+    active_playbooks: Optional[List[str]] = Field(
+        default=[], 
+        example=["PB-FLOOD-EVACUATION-V1"]
+    )
+
+# --- Response Models ---
 
 class RecommendationItem(BaseModel):
     id: str
@@ -49,52 +66,68 @@ class DecisionResponse(BaseModel):
     "/generate-decision",
     response_model=DecisionResponse,
     status_code=status.HTTP_200_OK,
-    summary="Generate AI Decision Intelligence Recommendations"
+    summary="Generate Decision Intelligence from GIS Hazard Data"
 )
-async def generate_decision(payload: DecisionRequest):
+async def generate_decision(payload: GISDecisionRequest):
     """
-    Receives spatial and hazard context data, passes it to the AI Decision Engine,
-    and returns ranked, explainable, actor-specific recommendations.
+    Receives spatial warning, exposure score, and critical asset context from the GIS team,
+    and returns ranked, explainable, facility-specific recommendations.
     """
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("FEATHERLESS_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OPENAI_API_KEY environment variable is not set."
+            detail="FEATHERLESS_API_KEY environment variable is not set."
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        base_url="https://api.featherless.ai/v1", 
+        api_key=api_key,
+        timeout=180.0 # Standard timeout for Featherless model calls
+    )
+
+    # Format asset counts and key facilities into clean prompt strings
+    asset_breakdown_str = ", ".join([f"{k}: {v}" for k, v in payload.impact.asset_counts.items()])
+    named_facilities_str = "\n".join([f"- {asset.name} ({asset.type})" for asset in payload.critical_assets])
 
     user_prompt = f"""
-    Analyze the following decision context and generate recommendations:
+    Analyze the following GIS warning context and generate target-actor recommendations:
     
-    Region: {payload.region_name} (ID: {payload.region_id})
-    Hazard Type: {payload.hazard_type}
-    Current Classified Risk: {payload.risk_level}
+    Warning ID: {payload.warning_id or 'N/A'}
+    Location: {payload.subcounty} Subcounty, {payload.county} County
+    Hazard Type: {payload.hazard}
+    Severity: {payload.severity}
     
-    Context Data:
-    - NDVI Anomaly: {payload.context.ndvi_anomaly}
-    - Soil Moisture Index: {payload.context.soil_moisture_index}
-    - Forecasted Rainfall Deficit: {payload.context.rainfall_deficit_pct}%
-    - Affected Population: {payload.context.affected_population}
+    Exposure & Impact Profile:
+    - Overall Exposure Score: {payload.exposure.exposure_score}/100
+    - Total Assets Exposed: {payload.impact.total_assets}
+    - Critical Assets Exposed: {payload.exposure.critical_assets}
+    - Asset Counts by Type: {asset_breakdown_str}
+    
+    High-Priority Named Facilities at Risk:
+    {named_facilities_str if named_facilities_str else 'No specific facilities named.'}
     
     Active Operational Playbooks: {', '.join(payload.active_playbooks) if payload.active_playbooks else 'None'}
     """
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            # Using deepseek v4 as configured on Featherless
+            model="deepseek-ai/DeepSeek-V4-Pro", 
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt}
             ],
-            response_format={"type": "json_object"},
-            temperature=0.2, # Low temperature for deterministic, consistent reasoning
+            temperature=0.2, 
         )
 
         content = response.choices[0].message.content
-        parsed_json = json.loads(content)
         
+        # Clean potential markdown wrappers if model outputs ```json ... ```
+        if content.startswith("```"):
+            content = content.strip("`").replace("json\n", "").replace("json", "")
+            
+        parsed_json = json.loads(content)
         return parsed_json
 
     except json.JSONDecodeError:
