@@ -1,7 +1,7 @@
 import os
 import json
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from openai import OpenAI
 
@@ -48,7 +48,7 @@ class DecisionResponse(BaseModel):
 @router.post(
     "/generate-decision",
     response_model=DecisionResponse,
-    status_code=Status.HTTP_200_OK,
+    status_code=status.HTTP_200_OK,
     summary="Generate AI Decision Intelligence Recommendations"
 )
 async def generate_decision(payload: DecisionRequest):
@@ -59,7 +59,7 @@ async def generate_decision(payload: DecisionRequest):
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(
-            status_code=Status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="OPENAI_API_KEY environment variable is not set."
         )
 
@@ -99,11 +99,11 @@ async def generate_decision(payload: DecisionRequest):
 
     except json.JSONDecodeError:
         raise HTTPException(
-            status_code=Status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to parse structured JSON response from AI provider."
         )
     except Exception as e:
         raise HTTPException(
-            status_code=Status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating decision: {str(e)}"
         )
