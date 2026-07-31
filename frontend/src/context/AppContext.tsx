@@ -67,7 +67,7 @@ const fallbackRecommendations: Recommendation[] = [
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
-function mapBackendRisk(value: string): RiskLevel {
+export function mapBackendRisk(value: string): RiskLevel {
   switch (value?.toLowerCase()) {
     case "low":
       return "Normal";

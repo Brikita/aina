@@ -2,7 +2,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAppContext, useLanguage, useRole } from "../../context/AppContext";
 import { Badge } from "../ui/Badge";
 import { RecommendationCard } from "./RecommendationCard";
-
+import { mapBackendRisk } from "../../context/AppContext";
 function riskSummary(riskLevel: string) {
   switch (riskLevel) {
     case "Critical":
