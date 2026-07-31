@@ -25,19 +25,19 @@ export const MOCK_HAZARD_DATA: Record<string, HazardLocation> = {
     county: "Turkana",
     subcounty: "Loima",
     country: "Kenya",
-    coordinates: { lat: 3.1166, lng: 35.6000 },
+    coordinates: { lat: 3.1166, lng: 35.6 },
     hazard: "Drought",
     severity: "Critical",
     impact: {
       total_assets: 150,
-      asset_counts: { BOREHOLE: 45, LIVESTOCK_MARKET: 5, SCHOOL: 100 }
+      asset_counts: { BOREHOLE: 45, LIVESTOCK_MARKET: 5, SCHOOL: 100 },
     },
     exposure: { exposure_score: 95, critical_assets: 50 },
     critical_assets: [
       { name: "Lorugum Livestock Market", type: "MARKET" },
-      { name: "Namoruputh Community Borehole", type: "BOREHOLE" }
+      { name: "Namoruputh Community Borehole", type: "BOREHOLE" },
     ],
-    active_playbooks: ["PB-DROUGHT-LIVESTOCK-V1", "PB-WASH-EMERGENCY"]
+    active_playbooks: ["PB-DROUGHT-LIVESTOCK-V1", "PB-WASH-EMERGENCY"],
   },
 
   // 2. Flood & Displacement - Jonglei, South Sudan
@@ -51,14 +51,14 @@ export const MOCK_HAZARD_DATA: Record<string, HazardLocation> = {
     severity: "High",
     impact: {
       total_assets: 85,
-      asset_counts: { HOSPITAL: 2, ROAD_SEGMENT: 15, SCHOOL: 68 }
+      asset_counts: { HOSPITAL: 2, ROAD_SEGMENT: 15, SCHOOL: 68 },
     },
     exposure: { exposure_score: 88, critical_assets: 17 },
     critical_assets: [
       { name: "Bor State Hospital", type: "HOSPITAL" },
-      { name: "Juba-Bor Primary Road", type: "ROAD_SEGMENT" }
+      { name: "Juba-Bor Primary Road", type: "ROAD_SEGMENT" },
     ],
-    active_playbooks: ["PB-FLOOD-EVACUATION-V2"]
+    active_playbooks: ["PB-FLOOD-EVACUATION-V2"],
   },
 
   // 3. Agricultural Drought - Somali Region, Ethiopia
@@ -67,19 +67,19 @@ export const MOCK_HAZARD_DATA: Record<string, HazardLocation> = {
     county: "Somali",
     subcounty: "Gode",
     country: "Ethiopia",
-    coordinates: { lat: 5.9500, lng: 43.5500 },
+    coordinates: { lat: 5.95, lng: 43.55 },
     hazard: "Drought",
     severity: "High",
     impact: {
       total_assets: 210,
-      asset_counts: { IRRIGATION_CANAL: 12, GRAIN_STORE: 8, VILLAGE: 190 }
+      asset_counts: { IRRIGATION_CANAL: 12, GRAIN_STORE: 8, VILLAGE: 190 },
     },
     exposure: { exposure_score: 75, critical_assets: 20 },
     critical_assets: [
       { name: "Gode Central Grain Reserve", type: "GRAIN_STORE" },
-      { name: "Wabe Shebelle Irrigation Intake", type: "IRRIGATION_CANAL" }
+      { name: "Wabe Shebelle Irrigation Intake", type: "IRRIGATION_CANAL" },
     ],
-    active_playbooks: ["PB-DROUGHT-AGRI-V1"]
+    active_playbooks: ["PB-DROUGHT-AGRI-V1"],
   },
 
   // 4. Urban Flash Flood - Djibouti City, Djibouti
@@ -88,18 +88,18 @@ export const MOCK_HAZARD_DATA: Record<string, HazardLocation> = {
     county: "Djibouti Region",
     subcounty: "Balbala",
     country: "Djibouti",
-    coordinates: { lat: 11.5890, lng: 43.1450 },
+    coordinates: { lat: 11.589, lng: 43.145 },
     hazard: "Flood",
     severity: "Moderate",
     impact: {
       total_assets: 340,
-      asset_counts: { POWER_SUBSTATION: 3, CLINIC: 12, URBAN_BLOCK: 325 }
+      asset_counts: { POWER_SUBSTATION: 3, CLINIC: 12, URBAN_BLOCK: 325 },
     },
     exposure: { exposure_score: 65, critical_assets: 15 },
     critical_assets: [
       { name: "Balbala Main Substation", type: "POWER_SUBSTATION" },
-      { name: "Cheikh Osman Clinic", type: "CLINIC" }
+      { name: "Cheikh Osman Clinic", type: "CLINIC" },
     ],
-    active_playbooks: ["PB-URBAN-FLOOD-V1"]
-  }
+    active_playbooks: ["PB-URBAN-FLOOD-V1"],
+  },
 };
