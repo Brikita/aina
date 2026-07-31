@@ -60,8 +60,8 @@ export function DecisionPanel() {
     : "Elevated";
 
   return (
-    <aside className="flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-      <div className="border-b border-slate-200 px-5 py-4">
+    <aside className="flex flex-col h-full max-h-screen overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+      <div className="shrink-0 border-b border-slate-200 px-5 py-4">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
           Decision Workflow
         </p>
@@ -89,7 +89,7 @@ export function DecisionPanel() {
         </p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+      <div className="flex-1 flex flex-col min-h-0 mt-4 px-4 py-4">
         {!selectedHazard ? (
           <div className="flex min-h-[260px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
             <div className="max-w-xs">
@@ -129,11 +129,12 @@ export function DecisionPanel() {
             </div>
 
             {decisionRecommendations.length === 0 ? (
-              <div className="min-h-0 flex-1 rounded-3xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-600">
+              <div className="flex-1 rounded-3xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-600 min-h-0">
                 No recommendations were returned from the AINA engine.
               </div>
             ) : (
-              <div className="min-h-0 flex-1 overflow-y-auto space-y-4 pr-1">
+              <div className="flex-1 flex flex-col min-h-0 mt-4">
+                <div className="overflow-y-auto pr-2 space-y-4">
                 {decisionRecommendations.map((recommendation, index) => (
                   <article
                     key={recommendation.id || index}
@@ -184,6 +185,7 @@ export function DecisionPanel() {
                     </div>
                   </article>
                 ))}
+                </div>
               </div>
             )}
           </div>
