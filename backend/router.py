@@ -26,10 +26,17 @@ class CriticalAssetItem(BaseModel):
     name: str = Field(..., example="Lodwar County Hospital")
     type: str = Field(..., example="HOSPITAL")
 
+class Coordinates(BaseModel):
+    lat: float
+    lng: float
+
+
 class GISDecisionRequest(BaseModel):
     warning_id: Optional[int] = Field(default=None, example=15)
     county: str = Field(..., example="Turkana")
     subcounty: str = Field(..., example="Loima")
+    country: Optional[str] = Field(default="Kenya", example="Kenya")
+    coordinates: Optional[Coordinates] = None
     hazard: str = Field(..., example="Flood")
     severity: str = Field(..., example="High")
     impact: ImpactData
@@ -94,7 +101,7 @@ async def generate_decision(payload: GISDecisionRequest):
     Analyze the following GIS warning context and generate target-actor recommendations:
     
     Warning ID: {payload.warning_id or 'N/A'}
-    Location: {payload.subcounty} Subcounty, {payload.county} County
+    Location: {payload.subcounty} Subcounty, {payload.county} County, {payload.country}
     Hazard Type: {payload.hazard}
     Severity: {payload.severity}
     
