@@ -57,7 +57,162 @@ body {
   pointer-events: auto;
 }
 
-/* Leaflet Draw Toolbar */
+/* ============================================
+   CONTEXT PANEL ANIMATIONS
+   ============================================ */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes progressBar {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+/* Context Panel Classes */
+.context-panel {
+  animation: slideIn 250ms ease-out;
+}
+
+.context-panel-closing {
+  animation: slideOut 200ms ease-in;
+}
+
+.tab-content {
+  animation: fadeIn 150ms ease-out;
+}
+
+.insight-strip {
+  animation: slideUp 200ms ease-out;
+}
+
+/* Skeleton Loading */
+.skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 12px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text-sm {
+  height: 10px;
+  background: #E5E7EB;
+  border-radius: 3px;
+  margin-bottom: 6px;
+  width: 60%;
+}
+
+.skeleton-text-lg {
+  height: 20px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.skeleton-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #E5E7EB;
+}
+
+.skeleton-rect {
+  height: 80px;
+  background: #E5E7EB;
+  border-radius: 8px;
+}
+
+/* ============================================
+   LEAFLET STYLES
+   ============================================ */
+
 .leaflet-draw-toolbar a {
   background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png') !important;
 }
@@ -137,7 +292,10 @@ body {
   }
 }
 
-/* Scrollbar */
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
@@ -154,7 +312,10 @@ body {
   background: #a8a8a8;
 }
 
-/* Mobile touch */
+/* ============================================
+   MOBILE TOUCH
+   ============================================ */
+
 @media (max-width: 768px) {
   button, input[type="checkbox"], input[type="range"] {
     touch-action: manipulation;
@@ -171,7 +332,10 @@ body {
   }
 }
 
-/* Custom marker styles */
+/* ============================================
+   CUSTOM MARKER STYLES
+   ============================================ */
+
 .custom-marker {
   background: transparent;
   border: none;
@@ -187,7 +351,10 @@ body {
   transition: transform 0.2s ease;
 }
 
-/* ===== PMTiles Overlay Styles ===== */
+/* ============================================
+   PMTILES OVERLAY
+   ============================================ */
+
 #pmtiles-overlay {
   position: absolute;
   top: 0;
@@ -210,7 +377,10 @@ body {
   opacity: 1 !important;
 }
 
-/* Print */
+/* ============================================
+   PRINT
+   ============================================ */
+
 @media print {
   .leaflet-control-container {
     display: none !important;

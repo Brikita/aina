@@ -55,3 +55,5 @@ __pycache__/
 backend/.venv/
 backend/venv/
 backend/.env
+frontend/public/data/kenya_wards.geojson
+frontend/data_sources/kenya_dhs_dataset_complete.csv

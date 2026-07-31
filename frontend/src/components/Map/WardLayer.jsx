@@ -1,57 +1,106 @@
-import { useEffect, useState, useRef } from 'react';
-import { GeoJSON } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { GeoJSON, Tooltip } from 'react-leaflet';
+import { getCounties } from '../../services/api';
 
-export default function WardLayer({ 
-  visible = true, 
-  onHover, 
+export default function WardLayer({
+  visible = true,
+  onHover,
   selectedFeature = null,
-  onLayerReady,
-  hasChildSelected = false,
+  opacity = 1.0,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const layerRef = useRef(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!visible) {
+      setData(null);
       setLoading(false);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
+    // Load local GeoJSON for geometry
     fetch('/data/kenya_counties_admin.geojson')
       .then(res => {
-        if (!res.ok) throw new Error('File not found');
+        if (!res.ok) throw new Error('GeoJSON file not found');
         return res.json();
       })
-      .then(data => {
-        console.log('Loaded Kenya counties (admin):', data.features?.length);
-        setData(data);
-        setLoading(false);
-        if (onLayerReady) {
-          onLayerReady(data);
-        }
+      .then(geoJsonData => {
+        // Then fetch county data from API to get IDs and any additional info
+        return getCounties()
+          .then(apiResponse => {
+            console.log('✅ API Counties:', apiResponse.data);
+            
+            // Create a lookup map of county names to IDs
+            const countyMap = {};
+            apiResponse.data.forEach(c => {
+              countyMap[c.name] = c.id;
+            });
+
+            // Add API data to GeoJSON features
+            const enrichedFeatures = geoJsonData.features.map(feature => {
+              const countyName = feature.properties.COUNTY || feature.properties.COUNTY_NAM || '';
+              const apiId = countyMap[countyName] || null;
+              
+              return {
+                ...feature,
+                properties: {
+                  ...feature.properties,
+                  api_id: apiId,
+                  county_name: countyName,
+                }
+              };
+            });
+
+            setData({
+              type: 'FeatureCollection',
+              features: enrichedFeatures,
+            });
+            setLoading(false);
+          });
       })
-      .catch((err) => {
-        console.error('Error loading county data:', err);
+      .catch(err => {
+        console.error('❌ Error loading county data:', err.message);
+        setError(err.message);
         setLoading(false);
       });
-  }, [visible, onLayerReady]);
+  }, [visible]);
 
-  if (!visible || loading) return null;
-  if (!data) return null;
+  if (!visible || loading || !data) {
+    if (loading) {
+      return (
+        <div style={{
+          position: 'fixed',
+          bottom: '140px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 2000,
+          background: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '12px',
+        }}>
+          🏛️ Loading counties...
+        </div>
+      );
+    }
+    return null;
+  }
 
   const getDefaultStyle = (feature) => {
-    const isSelected = selectedFeature && 
-      selectedFeature.properties && 
-      selectedFeature.properties.COUNTY === feature.properties.COUNTY;
+    const featureName = feature.properties?.COUNTY || feature.properties?.COUNTY_NAM || '';
+    const isSelected = selectedFeature?.name === featureName;
     
-    if (hasChildSelected && !isSelected) {
+    if (isSelected) {
       return {
-        fillColor: '#1E90FF',
-        fillOpacity: 0.08,
-        color: '#1E90FF',
-        weight: 0.5,
-        opacity: 0.3,
+        fillColor: '#FFD700',
+        fillOpacity: 0.5,
+        color: '#FFD700',
+        weight: 4,
       };
     }
     
@@ -64,78 +113,91 @@ export default function WardLayer({
   };
 
   const getHoverStyle = () => ({
-    fillColor: 'yellow',
-    fillOpacity: 0.4,
-    color: 'yellow',
-    weight: 3,
-  });
-
-  const getSelectedStyle = () => ({
     fillColor: '#FFD700',
-    fillOpacity: 0.5,
+    fillOpacity: 0.35,
     color: '#FFD700',
-    weight: 4,
+    weight: 3,
   });
 
   const onEachFeature = (feature, layer) => {
     if (!feature) return;
 
-    const featureName = feature.properties.COUNTY || 'Unknown';
-    const isSelected = selectedFeature && 
-      selectedFeature.properties && 
-      selectedFeature.properties.COUNTY === featureName;
+    const featureName = feature.properties?.COUNTY || feature.properties?.COUNTY_NAM || 'Unknown';
+    const isSelected = selectedFeature?.name === featureName;
 
     layer.on({
       mouseover: (e) => {
-        if (!hasChildSelected || isSelected) {
-          layer.setStyle(getHoverStyle());
-          layer.bringToFront();
-        }
-        
+        layer.setStyle(getHoverStyle());
+        layer.bringToFront();
         if (onHover) {
-          const props = feature.properties || {};
           onHover({
             level: 'county',
-            name: props.COUNTY || 'Unknown',
-            area: props.Shape_Area || 0,
-            perimeter: props.Shape_Leng || 0,
+            name: featureName,
+            feature: feature,
+            id: feature.properties?.api_id,
           });
         }
       },
       mouseout: (e) => {
         if (isSelected) {
-          layer.setStyle(getSelectedStyle());
+          layer.setStyle({
+            fillColor: '#FFD700',
+            fillOpacity: 0.5,
+            color: '#FFD700',
+            weight: 4,
+          });
         } else {
-          layer.setStyle(getDefaultStyle(feature));
+          layer.setStyle({
+            fillColor: '#1E90FF',
+            fillOpacity: 0.2,
+            color: '#1E90FF',
+            weight: 2,
+          });
         }
       },
       click: (e) => {
         if (onHover) {
-          const props = feature.properties || {};
           onHover({
             level: 'county',
-            name: props.COUNTY || 'Unknown',
-            area: props.Shape_Area || 0,
-            perimeter: props.Shape_Leng || 0,
-            isSelected: true,
+            name: featureName,
             feature: feature,
+            id: feature.properties?.api_id,
+            isSelected: true,
           });
         }
-      }
+      },
     });
 
     if (isSelected) {
-      layer.setStyle(getSelectedStyle());
+      layer.setStyle({
+        fillColor: '#FFD700',
+        fillOpacity: 0.5,
+        color: '#FFD700',
+        weight: 4,
+      });
       layer.bringToFront();
     }
   };
 
   return (
-    <GeoJSON 
-      ref={layerRef}
-      data={data} 
-      style={getDefaultStyle}
-      onEachFeature={onEachFeature}
-    />
+    <div style={{ opacity: opacity }}>
+      <GeoJSON
+        data={data}
+        style={getDefaultStyle}
+        onEachFeature={onEachFeature}
+      >
+        <Tooltip sticky>
+          {(feature) => {
+            const name = feature.properties?.COUNTY || feature.properties?.COUNTY_NAM || 'Unknown';
+            return `
+              <div style="font-size: 12px; max-width: 200px;">
+                <strong>🏛️ ${name}</strong>
+                <div style="color: #666; font-size: 11px;">County</div>
+              </div>
+            `;
+          }}
+        </Tooltip>
+      </GeoJSON>
+    </div>
   );
 }

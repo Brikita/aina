@@ -2,19 +2,19 @@ import { useState, useRef, useEffect } from 'react';
 import { MapContainer as LeafletMap, TileLayer } from 'react-leaflet';
 import WardLayer from './components/Map/WardLayer';
 import SubCountyLayer from './components/Map/SubCountyLayer';
-import WardLayerNew from './components/Map/WardLayerNew';
-import VillageLayer from './components/Map/VillageLayer';
-import Legend from './components/Map/Legend';
 import LayerControlPanel from './components/Map/LayerControlPanel';
 import InfoPanel from './components/Map/InfoPanel';
 import AdminPanel from './components/Map/AdminPanel';
-import MaskedRoadsLayer from './components/Map/MaskedRoadsLayer';
-import MaskedRiversLayer from './components/Map/MaskedRiversLayer';
-import LivelihoodLayer from './components/Map/LivelihoodLayer';
-import CustomDrawingsLayer from './components/Map/CustomDrawingsLayer';
 import DrawControl from './components/Map/DrawControl';
-import ClusteredHealthFacilitiesLayer from './components/Map/ClusteredHealthFacilitiesLayer';
-import BoreholeLayer from './components/Map/BoreholeLayer';
+import WarningLayer from './components/Map/WarningLayer';
+import AssetLayer from './components/Map/AssetLayer';
+import DashboardStats from './components/Map/DashboardStats';
+import IGADCountryLayer from './components/Map/IGADCountryLayer';
+import ContextPanel from './components/ContextPanel';
+import ImpactPanel from './components/Map/ImpactPanel';
+import RecommendationsPanel from './components/Map/RecommendationsPanel';
+import SimulationPanel from './components/Map/SimulationPanel';
+import AllocationsPanel from './components/Map/AllocationsPanel';
 import dataManager from './services/DataManager';
 import { zoomToFeature, zoomToKenya } from './utils/zoomUtils';
 import 'leaflet/dist/leaflet.css';
@@ -27,37 +27,33 @@ export default function App() {
     dark: false,
     counties: true,
     subcounties: false,
-    wards: false,
-    villages: false,
-    roads: false,
-    rivers: false,
-    livelihood: false,
-    health: false,
-    boreholes: false,
-    custom_drawings: false,
-    // Opacity values
+    warnings: false,
+    assets: false,
+    ethiopia: true,
+    sudan: true,
+    south_sudan: true,
+    uganda: true,
+    somalia: true,
+    djibouti: true,
     osm_opacity: 1.0,
     satellite_opacity: 1.0,
     dark_opacity: 1.0,
     counties_opacity: 1.0,
     subcounties_opacity: 1.0,
-    wards_opacity: 1.0,
-    villages_opacity: 1.0,
-    roads_opacity: 1.0,
-    rivers_opacity: 1.0,
-    livelihood_opacity: 1.0,
-    health_opacity: 1.0,
-    boreholes_opacity: 1.0,
-    custom_drawings_opacity: 1.0,
+    warnings_opacity: 1.0,
+    assets_opacity: 1.0,
   });
   const [drawnFeatures, setDrawnFeatures] = useState(null);
   const [selectedCounty, setSelectedCounty] = useState(null);
   const [selectedSubCounty, setSelectedSubCounty] = useState(null);
-  const [selectedWard, setSelectedWard] = useState(null);
-  const [selectedVillage, setSelectedVillage] = useState(null);
   const [infoData, setInfoData] = useState(null);
   const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showImpact, setShowImpact] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showSimulation, setShowSimulation] = useState(false);
+  const [showAllocations, setShowAllocations] = useState(false);
+  const [warningId, setWarningId] = useState(null);
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -71,10 +67,6 @@ export default function App() {
   const handleDrawCreate = (layer) => {
     const geoJSON = layer.toGeoJSON ? layer.toGeoJSON() : layer;
     setDrawnFeatures(geoJSON);
-    setLayers(prev => ({
-      ...prev,
-      custom_drawings: true
-    }));
   };
 
   const handleDrawEdit = (layers) => {
@@ -84,10 +76,6 @@ export default function App() {
   const handleDrawDelete = (layers) => {
     if (!layers) {
       setDrawnFeatures(null);
-      setLayers(prev => ({
-        ...prev,
-        custom_drawings: false
-      }));
     }
   };
 
@@ -113,23 +101,19 @@ export default function App() {
 
   const handleCountyHover = (data) => {
     if (data) {
-      const enhancedData = {
-        ...data,
-        subcountyCount: data.subcountyCount || 0,
-      };
-      setInfoData(enhancedData);
+      setInfoData(data);
       setIsInfoPanelVisible(true);
     }
     if (data && data.isSelected) {
-      setSelectedCounty(data);
+      setSelectedCounty({
+        name: data.name,
+        feature: data.feature,
+        id: data.id,
+      });
       setSelectedSubCounty(null);
-      setSelectedWard(null);
-      setSelectedVillage(null);
       setLayers(prev => ({
         ...prev,
         subcounties: true,
-        wards: false,
-        villages: false
       }));
       
       if (mapRef.current && data.feature) {
@@ -140,97 +124,76 @@ export default function App() {
 
   const handleSubCountyHover = (data) => {
     if (data) {
-      const enhancedData = {
-        ...data,
-        wardCount: data.wardCount || 0,
-      };
-      setInfoData(enhancedData);
+      setInfoData(data);
       setIsInfoPanelVisible(true);
     }
     if (data && data.isSelected) {
       setSelectedSubCounty(data);
-      setSelectedWard(null);
-      setSelectedVillage(null);
-      setLayers(prev => ({
-        ...prev,
-        wards: true,
-        villages: false
-      }));
-      
       if (mapRef.current && data.feature) {
         zoomToFeature(data.feature, mapRef.current, 50);
       }
     }
   };
 
-  const handleWardHover = (data) => {
+  const handleWarningClick = (warning) => {
+    setInfoData({
+      level: 'warning',
+      name: `${warning.hazard} - ${warning.county}`,
+      hazard: warning.hazard,
+      severity: warning.severity,
+      county: warning.county,
+      status: warning.status,
+      issued_at: warning.issued_at,
+    });
+    setIsInfoPanelVisible(true);
+    setWarningId(warning.id);
+    setShowImpact(true);
+    setShowRecommendations(true);
+    setShowSimulation(true);
+    setShowAllocations(true);
+  };
+
+  const handleAssetClick = (asset) => {
+    setInfoData({
+      level: 'asset',
+      name: asset.name || 'Unknown Asset',
+      type: asset.type || 'Unknown',
+      county: asset.county || 'Unknown',
+      capacity: asset.capacity || 'N/A',
+    });
+    setIsInfoPanelVisible(true);
+  };
+
+  const handleCountryHover = (data) => {
     if (data) {
-      setInfoData(data);
+      setInfoData({
+        level: 'country',
+        name: data.name,
+        country: data.country,
+        adminLevel: data.adminLevel || 'Region',
+        isSelected: data.isSelected || false,
+      });
       setIsInfoPanelVisible(true);
-    }
-    if (data && data.isSelected) {
-      setSelectedWard(data);
-      setSelectedVillage(null);
-      setLayers(prev => ({
-        ...prev,
-        villages: true
-      }));
       
-      if (mapRef.current && data.feature) {
+      if (data.isSelected && data.feature && mapRef.current) {
         zoomToFeature(data.feature, mapRef.current, 40);
       }
     }
   };
 
-  const handleVillageHover = (data) => {
-    if (data) {
-      setInfoData(data);
-      setIsInfoPanelVisible(true);
-    }
-    if (data && data.isSelected) {
-      setSelectedVillage(data);
-      
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 30);
-      }
-    }
-  };
-
-  const handleHealthFacilityClick = (facility) => {
-    setInfoData({
-      level: 'health_facility',
-      name: facility.name || 'Unknown',
-      type: facility.type || 'Unknown',
-      ownership: facility.ownership || 'Unknown',
-      county: facility.county || 'Unknown',
-    });
-    setIsInfoPanelVisible(true);
-  };
-
-  const handleBoreholeClick = (borehole) => {
-    setInfoData({
-      level: 'borehole',
-      name: borehole.name || 'Unknown Borehole',
-      status: borehole.status || 'Unknown',
-      county: borehole.county || 'Unknown',
-      well_depth: borehole.well_depth || 'Unknown',
-      yield: borehole.yield || 'Unknown',
-    });
-    setIsInfoPanelVisible(true);
-  };
-
   const handleReset = () => {
     setSelectedCounty(null);
     setSelectedSubCounty(null);
-    setSelectedWard(null);
-    setSelectedVillage(null);
     setInfoData(null);
     setIsInfoPanelVisible(false);
+    setShowImpact(false);
+    setShowRecommendations(false);
+    setShowSimulation(false);
+    setShowAllocations(false);
+    setWarningId(null);
     setLayers(prev => ({
       ...prev,
       subcounties: false,
-      wards: false,
-      villages: false
     }));
     
     if (mapRef.current) {
@@ -244,55 +207,28 @@ export default function App() {
     } else if (level === 'county') {
       setSelectedCounty(data);
       setSelectedSubCounty(null);
-      setSelectedWard(null);
-      setSelectedVillage(null);
       setLayers(prev => ({
         ...prev,
         subcounties: true,
-        wards: false,
-        villages: false
       }));
       if (mapRef.current && data.feature) {
         zoomToFeature(data.feature, mapRef.current, 60);
       }
     } else if (level === 'subcounty') {
       setSelectedSubCounty(data);
-      setSelectedWard(null);
-      setSelectedVillage(null);
-      setLayers(prev => ({
-        ...prev,
-        wards: true,
-        villages: false
-      }));
       if (mapRef.current && data.feature) {
         zoomToFeature(data.feature, mapRef.current, 50);
-      }
-    } else if (level === 'ward') {
-      setSelectedWard(data);
-      setSelectedVillage(null);
-      setLayers(prev => ({
-        ...prev,
-        villages: true
-      }));
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 40);
       }
     }
   };
 
-  const hasChildSelected = !!(selectedSubCounty || selectedWard || selectedVillage);
-
   const getSelectedFeature = () => {
-    if (selectedVillage) return selectedVillage.feature;
-    if (selectedWard) return selectedWard.feature;
     if (selectedSubCounty) return selectedSubCounty.feature;
     if (selectedCounty) return selectedCounty.feature;
     return null;
   };
 
   const getSelectedLevel = () => {
-    if (selectedVillage) return 'village';
-    if (selectedWard) return 'ward';
     if (selectedSubCounty) return 'subcounty';
     if (selectedCounty) return 'county';
     return null;
@@ -302,8 +238,8 @@ export default function App() {
     <div className="app-container">
       <div className="map-wrapper">
         <LeafletMap
-          center={[0.5, 38]}
-          zoom={6}
+          center={[5, 38]}
+          zoom={5}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
           ref={mapRef}
@@ -330,90 +266,61 @@ export default function App() {
             />
           )}
 
-          <div style={{ opacity: layers.counties_opacity || 1.0 }}>
-            <WardLayer 
-              visible={layers.counties} 
-              onHover={handleCountyHover}
-              selectedFeature={selectedCounty}
-              hasChildSelected={hasChildSelected}
-            />
-          </div>
-
-          <div style={{ opacity: layers.subcounties_opacity || 1.0 }}>
-            <SubCountyLayer 
-              visible={layers.subcounties}
-              countyName={selectedCounty?.name}
-              onHover={handleSubCountyHover}
-              selectedFeature={selectedSubCounty}
-            />
-          </div>
-
-          <div style={{ opacity: layers.wards_opacity || 1.0 }}>
-            <WardLayerNew 
-              visible={layers.wards}
-              subCountyName={selectedSubCounty?.name}
-              onHover={handleWardHover}
-              selectedFeature={selectedWard}
-            />
-          </div>
-
-          <div style={{ opacity: layers.villages_opacity || 1.0 }}>
-            <VillageLayer 
-              visible={layers.villages && selectedWard !== null}
-              wardName={selectedWard?.name}
-              wardId={selectedWard?.id}
-              onHover={handleVillageHover}
-              selectedFeature={selectedVillage}
-            />
-          </div>
-
-          <MaskedRoadsLayer 
-            visible={layers.roads}
-            selectedFeature={getSelectedFeature()}
-            selectedLevel={getSelectedLevel()}
-            opacity={layers.roads_opacity || 1.0}
+          <WardLayer 
+            visible={layers.counties} 
+            onHover={handleCountyHover}
+            selectedFeature={selectedCounty}
+            opacity={layers.counties_opacity || 1.0}
           />
 
-          <MaskedRiversLayer 
-            visible={layers.rivers}
-            selectedFeature={getSelectedFeature()}
-            selectedLevel={getSelectedLevel()}
-            opacity={layers.rivers_opacity || 1.0}
+          <SubCountyLayer 
+            visible={layers.subcounties}
+            countyName={selectedCounty?.name}
+            onHover={handleSubCountyHover}
+            selectedFeature={selectedSubCounty}
+            opacity={layers.subcounties_opacity || 1.0}
           />
 
-          <LivelihoodLayer 
-            visible={layers.livelihood}
-            opacity={layers.livelihood_opacity || 1.0}
+          <WarningLayer 
+            visible={layers.warnings}
+            onWarningClick={handleWarningClick}
           />
-          
-          {/* Health Facilities */}
-          <ClusteredHealthFacilitiesLayer 
-            visible={layers.health && selectedCounty !== null}
+
+          <AssetLayer 
+            visible={layers.assets}
             countyFilter={selectedCounty?.name}
-            onFacilityClick={handleHealthFacilityClick}
-            opacity={layers.health_opacity || 1.0}
+            onAssetClick={handleAssetClick}
           />
 
-          <BoreholeLayer 
-            visible={layers.boreholes && selectedCounty !== null}
-            dataPath="/data/turkana_boreholes.geojson"
-            countyFilter={selectedCounty?.name}
-            onBoreholeClick={handleBoreholeClick}
-            opacity={layers.boreholes_opacity || 1.0}
+          <IGADCountryLayer 
+            countryKey="ethiopia"
+            visible={layers.ethiopia}
+            onHover={handleCountryHover}
           />
-
-          <BoreholeLayer 
-            visible={layers.boreholes && selectedCounty !== null}
-            dataPath="/data/marsabit_boreholes.geojson"
-            countyFilter={selectedCounty?.name}
-            onBoreholeClick={handleBoreholeClick}
-            opacity={layers.boreholes_opacity || 1.0}
+          <IGADCountryLayer 
+            countryKey="sudan"
+            visible={layers.sudan}
+            onHover={handleCountryHover}
           />
-
-          <CustomDrawingsLayer 
-            data={drawnFeatures} 
-            visible={layers.custom_drawings}
-            opacity={layers.custom_drawings_opacity || 1.0}
+          <IGADCountryLayer 
+            countryKey="south_sudan"
+            visible={layers.south_sudan}
+            onHover={handleCountryHover}
+          />
+          <IGADCountryLayer 
+            countryKey="uganda"
+            visible={layers.uganda}
+            onHover={handleCountryHover}
+          />
+          <IGADCountryLayer 
+            countryKey="somalia"
+            visible={layers.somalia}
+            onHover={handleCountryHover}
+          />
+          <IGADCountryLayer 
+            countryKey="djibouti"
+            visible={layers.djibouti}
+            onHover={handleCountryHover}
           />
 
           <DrawControl 
@@ -425,13 +332,20 @@ export default function App() {
       </div>
 
       <div className="ui-overlay">
-        <Legend />
-        
+        <DashboardStats visible={true} isMobile={isMobile} />
+
         <LayerControlPanel 
           layers={layers}
           setLayers={setLayers}
           onOpacityChange={handleOpacityChange}
           onLayerSettings={handleLayerSettings}
+          isMobile={isMobile}
+        />
+
+        <ContextPanel 
+          county={selectedCounty}
+          warning={infoData?.level === 'warning' ? infoData : null}
+          onAction={(action) => console.log('Action:', action)}
           isMobile={isMobile}
         />
 
@@ -447,7 +361,7 @@ export default function App() {
             style={{
               position: 'fixed',
               right: '20px',
-              top: '80px',
+              top: '145px',
               zIndex: 2000,
               background: 'white',
               border: 'none',
@@ -473,10 +387,36 @@ export default function App() {
         <AdminPanel 
           selectedCounty={selectedCounty}
           selectedSubCounty={selectedSubCounty}
-          selectedWard={selectedWard}
-          selectedVillage={selectedVillage}
           onNavigate={handleNavigate}
           onReset={handleReset}
+          isMobile={isMobile}
+        />
+
+        <ImpactPanel 
+          visible={showImpact}
+          warningId={warningId}
+          onClose={() => setShowImpact(false)}
+          isMobile={isMobile}
+        />
+
+        <RecommendationsPanel
+          visible={showRecommendations}
+          warningId={warningId}
+          onClose={() => setShowRecommendations(false)}
+          isMobile={isMobile}
+        />
+
+        <SimulationPanel
+          visible={showSimulation}
+          warningId={warningId}
+          onClose={() => setShowSimulation(false)}
+          isMobile={isMobile}
+        />
+
+        <AllocationsPanel
+          visible={showAllocations}
+          warningId={warningId}
+          onClose={() => setShowAllocations(false)}
           isMobile={isMobile}
         />
 

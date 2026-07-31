@@ -33,6 +33,9 @@ export default function InfoPanel({
       case 'village': return '🏠';
       case 'health_facility': return '🏥';
       case 'borehole': return '💧';
+      case 'warning': return '⚠️';
+      case 'asset': return '📍';
+      case 'country': return '🌍';
       default: return 'ℹ️';
     }
   };
@@ -45,6 +48,9 @@ export default function InfoPanel({
       case 'village': return '#9C27B0';
       case 'health_facility': return '#F44336';
       case 'borehole': return '#FFC107';
+      case 'warning': return '#FF0000';
+      case 'asset': return '#2196F3';
+      case 'country': return '#FFD700';
       default: return '#666';
     }
   };
@@ -112,6 +118,7 @@ export default function InfoPanel({
       </div>
 
       <div style={{ padding: '16px' }}>
+        {/* County / Location Info */}
         {data.county && (
           <div style={{
             padding: '8px 12px',
@@ -124,6 +131,26 @@ export default function InfoPanel({
             📍 Part of: <strong>{data.county}</strong>
             {data.subcounty && (
               <span> › <strong>{data.subcounty}</strong></span>
+            )}
+          </div>
+        )}
+
+        {/* Country Info */}
+        {data.level === 'country' && data.country && (
+          <div style={{
+            padding: '8px 12px',
+            background: '#fff8e1',
+            borderRadius: '6px',
+            marginBottom: '12px',
+            fontSize: '12px',
+            color: '#555',
+          }}>
+            <span style={{ fontSize: '16px' }}>🌍</span>
+            <strong> {data.country}</strong>
+            {data.adminLevel && (
+              <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>
+                {data.adminLevel}: <strong>{data.name}</strong>
+              </div>
             )}
           </div>
         )}
@@ -256,6 +283,76 @@ export default function InfoPanel({
               </div>
             </div>
           )}
+
+          {data.hazard && (
+            <div style={{
+              padding: '10px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '11px', color: '#999' }}>Hazard</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', color: data.hazard === 'Flood' ? '#FF0000' : data.hazard === 'Drought' ? '#FF6600' : '#8B4513' }}>
+                {data.hazard}
+              </div>
+            </div>
+          )}
+
+          {data.severity && (
+            <div style={{
+              padding: '10px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '11px', color: '#999' }}>Severity</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', color: data.severity === 'High' ? '#FF0000' : data.severity === 'Medium' ? '#FFC107' : '#4CAF50' }}>
+                {data.severity}
+              </div>
+            </div>
+          )}
+
+          {data.issued_at && (
+            <div style={{
+              padding: '10px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '11px', color: '#999' }}>Issued</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+                {new Date(data.issued_at).toLocaleString()}
+              </div>
+            </div>
+          )}
+
+          {data.capacity && data.capacity !== 'N/A' && (
+            <div style={{
+              padding: '10px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '11px', color: '#999' }}>Capacity</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+                {data.capacity}
+              </div>
+            </div>
+          )}
+
+          {data.source && (
+            <div style={{
+              padding: '10px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '11px', color: '#999' }}>Source</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#333' }}>
+                {data.source}
+              </div>
+            </div>
+          )}
         </div>
 
         {data.level === 'ward' && data.population && data.area && (
@@ -296,6 +393,48 @@ export default function InfoPanel({
             textAlign: 'center',
           }}>
             💧 Borehole • {data.county || 'Unknown county'}
+          </div>
+        )}
+
+        {data.level === 'warning' && (
+          <div style={{
+            marginTop: '12px',
+            padding: '10px 12px',
+            background: '#ffebee',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#c62828',
+            textAlign: 'center',
+          }}>
+            ⚠️ {data.hazard} Warning • {data.severity} severity
+          </div>
+        )}
+
+        {data.level === 'asset' && (
+          <div style={{
+            marginTop: '12px',
+            padding: '10px 12px',
+            background: '#e3f2fd',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#0d47a1',
+            textAlign: 'center',
+          }}>
+            📍 {data.type} • {data.county || 'Unknown county'}
+          </div>
+        )}
+
+        {data.level === 'country' && (
+          <div style={{
+            marginTop: '12px',
+            padding: '10px 12px',
+            background: '#fff8e1',
+            borderRadius: '6px',
+            fontSize: '12px',
+            color: '#e65100',
+            textAlign: 'center',
+          }}>
+            🌍 {data.country} • Click to zoom
           </div>
         )}
 

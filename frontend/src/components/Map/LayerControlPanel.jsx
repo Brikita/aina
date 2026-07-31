@@ -25,19 +25,24 @@ export default function LayerControlPanel({
   }, [isMobile, isExpanded]);
 
   const layerConfigs = [
+    // Basemaps
     { id: 'osm', label: 'OpenStreetMap', type: 'basemap', color: '#4CAF50' },
     { id: 'satellite', label: 'Satellite', type: 'basemap', color: '#2196F3' },
     { id: 'dark', label: 'Dark Matter', type: 'basemap', color: '#333333' },
-    { id: 'counties', label: 'Kenya Counties', type: 'data', color: '#1E90FF' },
+    
+    // Backend-Driven Layers
+    { id: 'counties', label: 'Counties', type: 'data', color: '#1E90FF' },
     { id: 'subcounties', label: 'Sub-Counties', type: 'data', color: '#4CAF50' },
-    { id: 'wards', label: 'Wards', type: 'data', color: '#FF9800' },
-    { id: 'villages', label: 'Villages', type: 'data', color: '#9C27B0' },
-    { id: 'roads', label: 'Roads', type: 'data', color: '#FF6B35' },
-    { id: 'rivers', label: 'Rivers', type: 'data', color: '#2196F3' },
-    { id: 'livelihood', label: 'Livelihood Zones', type: 'data', color: '#4ECDC4' },
-    { id: 'health', label: 'Health Facilities', type: 'data', color: '#F44336' },
-    { id: 'boreholes', label: 'Boreholes', type: 'data', color: '#FFC107' },
-    { id: 'custom_drawings', label: 'Custom Drawings', type: 'data', color: '#FF6B35' },
+    { id: 'warnings', label: 'Warnings', type: 'data', color: '#FF0000' },
+    { id: 'assets', label: 'Assets', type: 'data', color: '#2196F3' },
+    
+    // IGAD Countries
+    { id: 'ethiopia', label: '🇪🇹 Ethiopia', type: 'data', color: '#FF6B35' },
+    { id: 'sudan', label: '🇸🇩 Sudan', type: 'data', color: '#4CAF50' },
+    { id: 'south_sudan', label: '🇸🇸 South Sudan', type: 'data', color: '#00BCD4' },
+    { id: 'uganda', label: '🇺🇬 Uganda', type: 'data', color: '#9C27B0' },
+    { id: 'somalia', label: '🇸🇴 Somalia', type: 'data', color: '#FF9800' },
+    { id: 'djibouti', label: '🇩🇯 Djibouti', type: 'data', color: '#F44336' },
   ];
 
   const togglePanel = () => {
@@ -91,7 +96,7 @@ export default function LayerControlPanel({
       id="layer-control-panel"
       style={{
         position: 'fixed',
-        top: isMobile ? '60px' : '12px',
+        top: isMobile ? '60px' : '40px',
         right: isMobile ? '10px' : '15px',
         zIndex: 2000,
         maxWidth: isMobile ? '95vw' : '320px',
