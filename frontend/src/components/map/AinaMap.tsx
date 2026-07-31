@@ -1,11 +1,20 @@
 import { useMemo, type ReactNode, type ComponentType } from "react";
-import { GeoJSON, MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import {
+  CircleMarker,
+  GeoJSON,
+  MapContainer,
+  Marker,
+  Popup,
+  TileLayer,
+  Tooltip,
+} from "react-leaflet";
 import type { GeoJSONProps } from "react-leaflet/GeoJSON";
 import type { MapContainerProps } from "react-leaflet/MapContainer";
 import type { MarkerProps } from "react-leaflet/Marker";
 import type { PopupProps } from "react-leaflet/Popup";
 import type { TileLayerProps } from "react-leaflet/TileLayer";
 import { useAppContext } from "../../context/AppContext";
+import { MOCK_HAZARD_DATA } from "../../data/mockHazards";
 import type { RegionData } from "../../types";
 import "leaflet/dist/leaflet.css";
 
@@ -92,7 +101,7 @@ const kajiadoPolygon = {
 } as const;
 
 export function AinaMap() {
-  const { setActiveRegion, fetchDecisionIntelligence } = useAppContext();
+  const { analyzeHazard } = useAppContext();
 
   const polygonStyle = useMemo(
     () => ({
@@ -104,9 +113,10 @@ export function AinaMap() {
     [],
   );
 
-  const handleClick = () => {
-    setActiveRegion(baseRegion);
-    void fetchDecisionIntelligence(baseRegion);
+  const hazardColor = (severity: string) => {
+    if (severity === "Critical") return "#ef4444";
+    if (severity === "High") return "#f97316";
+    return "#facc15";
   };
 
   return (
@@ -120,8 +130,44 @@ export function AinaMap() {
         <LeafletGeoJSON
           data={kajiadoPolygon}
           style={() => polygonStyle}
-          eventHandlers={{ click: handleClick }}
+          eventHandlers={{ click: () => void analyzeHazard(baseRegion) }}
         />
+
+        {Object.values(MOCK_HAZARD_DATA).map((location) => (
+          <CircleMarker
+            key={`hazard-${location.warning_id}`}
+            center={[location.coordinates.lat, location.coordinates.lng]}
+            radius={10}
+            pathOptions={{
+              color: hazardColor(location.severity),
+              fillColor: hazardColor(location.severity),
+              fillOpacity: 0.45,
+            }}
+            eventHandlers={{
+              click: () => {
+                void analyzeHazard(location);
+              },
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
+              {`${location.hazard} — ${location.county}`}
+            </Tooltip>
+            <Popup>
+              <div className="text-sm">
+                <p className="font-semibold">{location.hazard}</p>
+                <p>
+                  {location.county}, {location.subcounty}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Severity: {location.severity}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  Click to generate decision intelligence.
+                </p>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
 
         <LeafletMarker position={center}>
           <LeafletPopup>Nairobi operational hub</LeafletPopup>
