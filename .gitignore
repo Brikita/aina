@@ -26,3 +26,56 @@ docker-data/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Large data files (ignore)
+*.geojson
+*.pmtiles
+*.shp
+*.dbf
+*.prj
+*.shx
+*.cpg
+*.sbn
+*.sbx
+
+# Data sources
+data_sources/
+frontend/public/data/
+frontend/data_sources/
+
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Environment
+.env
+.env.local
+.venv/
+venv/
+
+# Build
+dist/
+build/
+frontend/dist/
+frontend/build/
+
+# Large files - DO NOT COMMIT
+*.geojson
+*.pmtiles
+*.shp
+*.dbf
+*.prj
+*.shx
+*.cpg
+*.sbn
+*.sbx
+*.csv
+
+# Data sources
+data_sources/
+frontend/data_sources/
+frontend/public/data/
+
+# Node modules
+node_modules/
+frontend/node_modules/
