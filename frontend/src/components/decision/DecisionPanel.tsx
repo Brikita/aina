@@ -135,56 +135,56 @@ export function DecisionPanel() {
             ) : (
               <div className="flex-1 flex flex-col min-h-0 mt-4">
                 <div className="overflow-y-auto pr-2 space-y-4">
-                {decisionRecommendations.map((recommendation, index) => (
-                  <article
-                    key={recommendation.id || index}
-                    className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                          {recommendation.target_actor}
-                        </p>
-                        <h3 className="mt-2 text-lg font-bold text-slate-900">
-                          {recommendation.action_title}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-slate-700">
-                          {recommendation.action_details}
-                        </p>
+                  {decisionRecommendations.map((recommendation, index) => (
+                    <article
+                      key={recommendation.id || index}
+                      className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                            {recommendation.target_actor}
+                          </p>
+                          <h3 className="mt-2 text-lg font-bold text-slate-900">
+                            {recommendation.action_title}
+                          </h3>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">
+                            {recommendation.action_details}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-start gap-2 text-sm text-slate-600 sm:items-end">
+                          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase text-amber-700">
+                            {recommendation.urgency.replace("_", " ")}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-600">
+                            Confidence{" "}
+                            {Math.round(recommendation.confidence_score * 100)}%
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-col items-start gap-2 text-sm text-slate-600 sm:items-end">
-                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase text-amber-700">
-                          {recommendation.urgency.replace("_", " ")}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-600">
-                          Confidence{" "}
-                          {Math.round(recommendation.confidence_score * 100)}%
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="mt-4 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Reasoning
-                        </p>
-                        <p className="mt-2">{recommendation.reasoning}</p>
+                      <div className="mt-4 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Reasoning
+                          </p>
+                          <p className="mt-2">{recommendation.reasoning}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                            Supporting Evidence
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm">
+                            {recommendation.supporting_evidence.map((item) => (
+                              <li key={item} className="list-disc pl-4">
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                          Supporting Evidence
-                        </p>
-                        <ul className="mt-2 space-y-1 text-sm">
-                          {recommendation.supporting_evidence.map((item) => (
-                            <li key={item} className="list-disc pl-4">
-                              {item}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))}
                 </div>
               </div>
             )}

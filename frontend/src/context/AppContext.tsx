@@ -120,6 +120,22 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setError(null);
     setIsAnalyzing(true);
 
+    const cacheKey = `aina_cache_${hazard.warning_id}_${userRole}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      setTimeout(() => {
+        try {
+          const parsed = JSON.parse(cached);
+          setDecisionData(parsed);
+        } catch (e) {
+          console.error("Failed to parse cached decision data", e);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      }, 1500);
+      return;
+    }
+
     const assetCountsString = Object.entries(hazard.impact.asset_counts)
       .map(([assetType, count]) => `${assetType}: ${count}`)
       .join(", ");
@@ -130,7 +146,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     const activePlaybooksString = hazard.active_playbooks.join(", ");
 
-    const userPrompt = `Analyze the following GIS warning context and generate target-actor recommendations:
+    const userPrompt = `The user currently viewing this intelligence is acting in the role of: ${userRole}. Tailor the 'summary' and prioritize the recommendations to be highly relevant to this specific role's level of command.
+  Analyze the following GIS warning context and generate target-actor recommendations:
 Warning ID: ${hazard.warning_id}
 Location: ${hazard.subcounty} Subcounty, ${hazard.county} County, ${hazard.country}
 Hazard Type: ${hazard.hazard}
@@ -190,6 +207,11 @@ Active Operational Playbooks: ${activePlaybooksString}`;
         .trim();
 
       const parsedData = JSON.parse(cleanContent);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(parsedData));
+      } catch (e) {
+        console.error("Failed to cache decision data", e);
+      }
       setDecisionData(parsedData);
     } catch (err: any) {
       console.error("Analyze hazard error:", err);
