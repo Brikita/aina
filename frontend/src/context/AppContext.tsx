@@ -1,4 +1,3 @@
-import axios from "axios";
 import {
   createContext,
   useContext,
@@ -7,7 +6,6 @@ import {
   type ReactNode,
 } from "react";
 import type {
-  DecisionIntelligenceResponse,
   Recommendation,
   RegionData,
   RiskLevel,
@@ -26,8 +24,6 @@ interface AppContextValue {
   isSimulationMode: boolean;
   activeScenario: SimulationScenario;
   activeRegion: RegionData | null;
-  activeHazardType: string;
-  activeSummary: string;
   recommendations: Recommendation[];
   riskLevel: RiskLevel;
   isAnalyzing: boolean;
@@ -40,7 +36,6 @@ interface AppContextValue {
   setActiveScenario: (scenario: SimulationScenario) => void;
   setActiveRegion: (region: RegionData | null) => void;
   approveAction: (id: string) => void;
-  fetchDecisionIntelligence: (regionData: RegionData) => Promise<void>;
   analyzeHazard: (hazard: HazardLocation) => Promise<void>;
   setUserRole: (role: UserRole) => void;
   setLanguage: (language: UserLanguage) => void;
@@ -99,8 +94,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [activeRegion, setActiveRegionState] = useState<RegionData | null>(
     null,
   );
-  const [activeHazardType, setActiveHazardType] = useState("");
-  const [activeSummary, setActiveSummary] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>(
     fallbackRecommendations,
   );
@@ -236,17 +229,11 @@ Active Operational Playbooks: ${activePlaybooksString}`;
   };
 
   // Legacy backend fetch (keeping it intact just in case)
-  const fetchDecisionIntelligence = async (regionData: RegionData) => {
-    // implementation unchanged for brevity
-  };
-
   const value = useMemo(
     () => ({
       isSimulationMode,
       activeScenario,
       activeRegion,
-      activeHazardType,
-      activeSummary,
       recommendations,
       riskLevel,
       isAnalyzing,
@@ -259,7 +246,6 @@ Active Operational Playbooks: ${activePlaybooksString}`;
       setActiveScenario,
       setActiveRegion,
       approveAction,
-      fetchDecisionIntelligence,
       analyzeHazard,
       setUserRole,
       setLanguage,
@@ -268,8 +254,6 @@ Active Operational Playbooks: ${activePlaybooksString}`;
       isSimulationMode,
       activeScenario,
       activeRegion,
-      activeHazardType,
-      activeSummary,
       recommendations,
       riskLevel,
       isAnalyzing,

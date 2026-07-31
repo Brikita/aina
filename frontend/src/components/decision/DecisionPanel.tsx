@@ -1,7 +1,6 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { useAppContext, useLanguage, useRole } from "../../context/AppContext";
+import { Loader2 } from "lucide-react";
+import { useAppContext } from "../../context/AppContext";
 import { Badge } from "../ui/Badge";
-import { RecommendationCard } from "./RecommendationCard";
 import { mapBackendRisk } from "../../context/AppContext";
 function riskSummary(riskLevel: string) {
   switch (riskLevel) {
@@ -16,45 +15,14 @@ function riskSummary(riskLevel: string) {
   }
 }
 
-function titleCopy(language: string) {
-  return language === "Swahili" ? "Hatari ya Drought" : "Drought Risk";
-}
-
-function hazardSummary(language: string, hazardType: string, summary: string) {
-  if (language === "Swahili") {
-    return (
-      summary ||
-      `Ufuatiliaji wa ${hazardType || "hatari"} unaonyesha tishio la kioperesheni.`
-    );
-  }
-
-  return (
-    summary ||
-    `Operational monitoring indicates an active ${hazardType || "hazard"}.`
-  );
-}
-
-function roleCopy(role: string, confidence: string) {
-  if (role === "National Director") {
-    return confidence;
-  }
-
-  if (role === "County Lead") {
-    return "Actionable Logistics: Pre-position water trucks";
-  }
-
-  return "Field movement tracked and ready for escalation";
-}
-
 export function DecisionPanel() {
   const { selectedHazard, isAnalyzing, decisionData } = useAppContext();
-  const { userRole } = useRole();
-  const { language } = useLanguage();
 
   const hasDecision = Boolean(decisionData);
   const hazardType = decisionData?.hazard_type || selectedHazard?.hazard || "";
   const summary = decisionData?.summary || "";
-  const decisionRecommendations = decisionData?.recommendations ?? [];
+  const decisionRecommendations = (decisionData?.recommendations ??
+    []) as Array<any>;
   const activeRiskLevel = decisionData?.classified_risk
     ? mapBackendRisk(decisionData.classified_risk)
     : "Elevated";
@@ -89,7 +57,7 @@ export function DecisionPanel() {
         </p>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 mt-4 px-4 py-4">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
         {!selectedHazard ? (
           <div className="flex min-h-[260px] items-center justify-center rounded-3xl border border-dashed border-slate-200 bg-white px-6 py-10 text-center">
             <div className="max-w-xs">
@@ -135,56 +103,63 @@ export function DecisionPanel() {
             ) : (
               <div className="flex-1 flex flex-col min-h-0 mt-4">
                 <div className="overflow-y-auto pr-2 space-y-4">
-                  {decisionRecommendations.map((recommendation, index) => (
-                    <article
-                      key={recommendation.id || index}
-                      className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                            {recommendation.target_actor}
-                          </p>
-                          <h3 className="mt-2 text-lg font-bold text-slate-900">
-                            {recommendation.action_title}
-                          </h3>
-                          <p className="mt-2 text-sm leading-6 text-slate-700">
-                            {recommendation.action_details}
-                          </p>
+                  {decisionRecommendations.map(
+                    (recommendation: any, index: number) => (
+                      <article
+                        key={recommendation.id || index}
+                        className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                              {recommendation.target_actor}
+                            </p>
+                            <h3 className="mt-2 text-lg font-bold text-slate-900">
+                              {recommendation.action_title}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-700">
+                              {recommendation.action_details}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-start gap-2 text-sm text-slate-600 sm:items-end">
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase text-amber-700">
+                              {recommendation.urgency.replace("_", " ")}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-600">
+                              Confidence{" "}
+                              {Math.round(
+                                recommendation.confidence_score * 100,
+                              )}
+                              %
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-start gap-2 text-sm text-slate-600 sm:items-end">
-                          <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase text-amber-700">
-                            {recommendation.urgency.replace("_", " ")}
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-600">
-                            Confidence{" "}
-                            {Math.round(recommendation.confidence_score * 100)}%
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="mt-4 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                            Reasoning
-                          </p>
-                          <p className="mt-2">{recommendation.reasoning}</p>
+                        <div className="mt-4 space-y-3 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                              Reasoning
+                            </p>
+                            <p className="mt-2">{recommendation.reasoning}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                              Supporting Evidence
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm">
+                              {recommendation.supporting_evidence.map(
+                                (item: string) => (
+                                  <li key={item} className="list-disc pl-4">
+                                    {item}
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                            Supporting Evidence
-                          </p>
-                          <ul className="mt-2 space-y-1 text-sm">
-                            {recommendation.supporting_evidence.map((item) => (
-                              <li key={item} className="list-disc pl-4">
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ),
+                  )}
                 </div>
               </div>
             )}

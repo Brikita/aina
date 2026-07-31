@@ -14,7 +14,7 @@ import type { MarkerProps } from "react-leaflet/Marker";
 import type { PopupProps } from "react-leaflet/Popup";
 import type { TileLayerProps } from "react-leaflet/TileLayer";
 import { useAppContext } from "../../context/AppContext";
-import { MOCK_HAZARD_DATA } from "../../data/mockHazards";
+import { MOCK_HAZARD_DATA, type HazardLocation } from "../../data/mockHazards";
 import type { RegionData } from "../../types";
 import "leaflet/dist/leaflet.css";
 
@@ -77,6 +77,26 @@ const baseRegion: RegionData = {
     "County flood watch intersects low-lying drainage and settlement corridors.",
 };
 
+const baseRegionHazard: HazardLocation = {
+  warning_id: 100,
+  county: "Kajiado",
+  subcounty: "Kajiado West",
+  country: "Kenya",
+  coordinates: { lat: -1.5, lng: 36.8 },
+  hazard: "Flood",
+  severity: "High",
+  impact: {
+    total_assets: 135,
+    asset_counts: { HOSPITAL: 3, ROAD_SEGMENT: 12, SCHOOL: 45 },
+  },
+  exposure: { exposure_score: 79, critical_assets: 22 },
+  critical_assets: [
+    { name: "Ngong Hospital", type: "HOSPITAL" },
+    { name: "Kajiado County Bridge", type: "ROAD_SEGMENT" },
+  ],
+  active_playbooks: ["PB-FLOOD-EVACUATION-V2"],
+};
+
 const kajiadoPolygon = {
   type: "Feature",
   properties: {
@@ -130,7 +150,7 @@ export function AinaMap() {
         <LeafletGeoJSON
           data={kajiadoPolygon}
           style={() => polygonStyle}
-          eventHandlers={{ click: () => void analyzeHazard(baseRegion) }}
+          eventHandlers={{ click: () => void analyzeHazard(baseRegionHazard) }}
         />
 
         {Object.values(MOCK_HAZARD_DATA).map((location) => (
