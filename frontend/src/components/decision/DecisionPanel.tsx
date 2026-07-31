@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { useAppContext, useLanguage, useRole } from "../../context/AppContext";
 import { Badge } from "../ui/Badge";
 import { RecommendationCard } from "./RecommendationCard";
@@ -17,12 +17,26 @@ function riskSummary(riskLevel: string) {
 }
 
 function titleCopy(language: string) {
-  return language === "Swahili" ? "Hatari ya Mafuriko" : "Flood Risk";
+  return language === "Swahili" ? "Hatari ya Drought" : "Drought Risk";
 }
 
-function roleCopy(role: string) {
+function hazardSummary(language: string, hazardType: string, summary: string) {
+  if (language === "Swahili") {
+    return (
+      summary ||
+      `Ufuatiliaji wa ${hazardType || "hatari"} unaonyesha tishio la kioperesheni.`
+    );
+  }
+
+  return (
+    summary ||
+    `Operational monitoring indicates an active ${hazardType || "hazard"}.`
+  );
+}
+
+function roleCopy(role: string, confidence: string) {
   if (role === "National Director") {
-    return "Ensemble Confidence 84%";
+    return confidence;
   }
 
   if (role === "County Lead") {
@@ -33,7 +47,13 @@ function roleCopy(role: string) {
 }
 
 export function DecisionPanel() {
-  const { recommendations, riskLevel, isAnalyzing } = useAppContext();
+  const {
+    recommendations,
+    riskLevel,
+    isAnalyzing,
+    activeHazardType,
+    activeSummary,
+  } = useAppContext();
   const { userRole } = useRole();
   const { language } = useLanguage();
 
@@ -46,6 +66,9 @@ export function DecisionPanel() {
         <h2 className="mt-2 text-xl font-bold text-slate-900">
           {titleCopy(language)}
         </h2>
+        <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">
+          {activeHazardType || "Hazard classification pending"}
+        </p>
         <div className="mt-3">
           <Badge variant={riskLevel} />
         </div>
@@ -53,8 +76,14 @@ export function DecisionPanel() {
           {riskSummary(riskLevel)}
         </p>
         <p className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-sm">
-          {roleCopy(userRole)}
+          {roleCopy(userRole, "Ensemble Confidence 84%")}
         </p>
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+            <p>{hazardSummary(language, activeHazardType, activeSummary)}</p>
+          </div>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
