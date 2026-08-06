@@ -4,92 +4,37 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useMemo } from "react";
 import { GeoJSON, MapContainer, TileLayer } from "react-leaflet";
 import { useAppContext } from "../../context/AppContext";
-import { getCounties } from "../../services/api";
-import type { Feature, FeatureCollection, Geometry } from 'geojson';
-
-// Define RegionData interface
-interface RegionData {
-  id: string;
-  name: string;
-  hazardType: string;
-  severity: string;
-  context: string;
-}
-
-// Define County Properties
-interface CountyProperties {
-  COUNTY?: string;
-  COUNTY_NAM?: string;
-  id?: number;
-  [key: string]: unknown;
-}
-
-type CountyFeature = Feature<Geometry, CountyProperties>;
-
-// Define API response type
-interface ApiCountyItem {
-  id: number;
-  name: string;
-}
+import "leaflet/dist/leaflet.css";
 
 export function AinaMap() {
-  const { setActiveRegion, fetchDecisionIntelligence } = useAppContext();
+  // Get dashboard functions from AppContext
+  const { 
+    setActiveRegion, 
+    fetchDecisionIntelligence,
+    selectedCounty,
+    setSelectedCounty,
+  } = useAppContext();
   
-  const [counties, setCounties] = useState<FeatureCollection | null>(null);
-  const [selectedCounty, setSelectedCounty] = useState<CountyFeature | null>(null);
+  const [counties, setCounties] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load counties from API
+  // Load counties from local GeoJSON
   useEffect(() => {
-    getCounties()
-      .then((response: { data: ApiCountyItem[] }) => {
-        console.log('✅ Counties loaded from API:', response.data);
-        
-        const features: CountyFeature[] = response.data.map((item: ApiCountyItem, index: number) => ({
-          type: "Feature",
-          id: item.id,
-          properties: {
-            COUNTY: item.name,
-            id: item.id,
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [39 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
-                [39.3 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
-                [39.3 + (index % 10) * 0.3, -1.2 + Math.floor(index / 10) * 0.3],
-                [39 + (index % 10) * 0.3, -1.2 + Math.floor(index / 10) * 0.3],
-                [39 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
-              ],
-            ],
-          },
-        }));
-
-        setCounties({
-          type: "FeatureCollection",
-          features: features,
-        } as FeatureCollection);
+    fetch('/data/kenya_counties_admin.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error('File not found');
+        return res.json();
+      })
+      .then(data => {
+        console.log('✅ Counties loaded:', data.features?.length);
+        setCounties(data);
         setLoading(false);
       })
-      .catch((err: Error) => {
-        console.error('❌ Error loading counties from API:', err);
+      .catch((err) => {
+        console.error('❌ Error loading counties:', err);
         setError(err.message);
         setLoading(false);
-        
-        // Fallback: Load from local GeoJSON if API fails
-        fetch('/data/kenya_counties_admin.geojson')
-          .then(res => res.json())
-          .then((data: FeatureCollection) => {
-            console.log('✅ Using fallback local GeoJSON');
-            setCounties(data);
-            setLoading(false);
-          })
-          .catch(() => {
-            console.error('❌ Fallback also failed');
-            setLoading(false);
-          });
       });
   }, []);
 
@@ -123,41 +68,46 @@ export function AinaMap() {
     [],
   );
 
-  const handleCountyClick = (feature: CountyFeature) => {
+  // ⭐ CRITICAL: This connects the map to the dashboard
+  const handleCountyClick = (feature: any) => {
     const props = feature.properties;
     const countyName = props.COUNTY || props.COUNTY_NAM || 'Unknown';
-    const countyId = props.id || feature.id || 0;
     
-    console.log(`📍 County clicked: ${countyName} (ID: ${countyId})`);
+    console.log(`📍 County clicked: ${countyName}`);
+    
+    // 1. Highlight the county on the map
     setSelectedCounty(feature);
     
-    // ✅ Define regionData with proper type
-    const regionData: RegionData = {
-      id: String(countyId) || countyName.toLowerCase().replace(/\s+/g, '-'),
+    // 2. Create region data for the dashboard
+    const regionData = {
+      id: countyName.toLowerCase().replace(/\s+/g, '-'),
       name: countyName,
       hazardType: "Flood",
       severity: "High",
       context: `${countyName} county analysis requested`,
     };
     
+    // 3. ⭐ Update the dashboard (DecisionPanel)
     setActiveRegion(regionData);
+    
+    // 4. ⭐ Fetch recommendations for the dashboard
     fetchDecisionIntelligence(regionData);
   };
 
-  const getCountyStyle = (feature: CountyFeature) => {
+  const getCountyStyle = (feature: any) => {
     const isSelected = selectedCounty && 
       selectedCounty.properties?.COUNTY === feature.properties?.COUNTY;
     return isSelected ? selectedStyle : polygonStyle;
   };
 
-  const onEachCounty = (feature: CountyFeature, layer: any) => {
+  const onEachCounty = (feature: any, layer: any) => {
     layer.on({
       click: () => handleCountyClick(feature),
-      mouseover: (e: { target: { setStyle: (style: unknown) => void; bringToFront: () => void } }) => {
+      mouseover: (e: any) => {
         e.target.setStyle(hoverStyle);
         e.target.bringToFront();
       },
-      mouseout: (e: { target: { setStyle: (style: unknown) => void } }) => {
+      mouseout: (e: any) => {
         const isSelected = selectedCounty && 
           selectedCounty.properties?.COUNTY === feature.properties?.COUNTY;
         if (!isSelected) {
@@ -170,7 +120,7 @@ export function AinaMap() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-slate-950 rounded-3xl">
-        <p className="text-slate-400">Loading counties from API...</p>
+        <p className="text-slate-400">Loading counties...</p>
       </div>
     );
   }
@@ -205,6 +155,7 @@ export function AinaMap() {
         )}
       </MapContainer>
 
+      {/* Map Info Overlay */}
       <div className="pointer-events-none absolute left-4 top-4 max-w-sm rounded-2xl bg-slate-950/70 px-4 py-3 text-sm text-slate-100 backdrop-blur-sm">
         <p className="text-xs uppercase tracking-[0.24em] text-cyan-300">
           Map Intelligence
@@ -212,7 +163,7 @@ export function AinaMap() {
         <p className="mt-1 text-slate-200">
           {selectedCounty 
             ? `📍 ${selectedCounty.properties?.COUNTY || 'Selected'}`
-            : 'Click a county polygon to generate decision intelligence.'}
+            : 'Click a county to generate decision intelligence.'}
         </p>
       </div>
     </section>

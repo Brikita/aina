@@ -5,13 +5,13 @@ import { getCounties } from '../../services/api';
 export default function WardLayer({
   visible = true,
   onHover,
+  onCountyClick,
   selectedFeature = null,
   opacity = 1.0,
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [countyDataMap, setCountyDataMap] = useState({});
 
   useEffect(() => {
     if (!visible) {
@@ -23,43 +23,34 @@ export default function WardLayer({
     setLoading(true);
     setError(null);
 
-    // Step 1: Fetch API data first (population, stats, etc.)
-    getCounties()
-      .then(apiResponse => {
-        console.log('✅ API Counties loaded:', apiResponse.data);
-        
-        // Create a lookup map: county_name -> API data
-        const map = {};
-        apiResponse.data.forEach(c => {
-          map[c.name] = c;
-        });
-        setCountyDataMap(map);
+    // Load local GeoJSON for geometry
+    fetch('/data/kenya_counties_admin.geojson')
+      .then(res => {
+        if (!res.ok) throw new Error('GeoJSON file not found');
+        return res.json();
+      })
+      .then(geoJsonData => {
+        // Then fetch county data from API to get IDs and any additional info
+        return getCounties()
+          .then(apiResponse => {
+            console.log('✅ API Counties:', apiResponse.data);
+            
+            // Create a lookup map of county names to IDs
+            const countyMap = {};
+            apiResponse.data.forEach(c => {
+              countyMap[c.name] = c.id;
+            });
 
-        // Step 2: Load local GeoJSON for geometry
-        return fetch('/data/kenya_counties_admin.geojson')
-          .then(res => {
-            if (!res.ok) throw new Error('GeoJSON file not found');
-            return res.json();
-          })
-          .then(geoJsonData => {
-            // Step 3: Enrich GeoJSON with API data
+            // Add API data to GeoJSON features
             const enrichedFeatures = geoJsonData.features.map(feature => {
               const countyName = feature.properties.COUNTY || feature.properties.COUNTY_NAM || '';
-              const apiData = map[countyName] || {};
+              const apiId = countyMap[countyName] || null;
               
               return {
                 ...feature,
                 properties: {
                   ...feature.properties,
-                  // API data (if available)
-                  api_id: apiData.id || null,
-                  total_population: apiData.population || apiData.total_population || feature.properties.Total_Population19 || 0,
-                  male_population: apiData.male || apiData.male_population || feature.properties.Male_populatio_2019 || 0,
-                  female_population: apiData.female || apiData.female_population || feature.properties.Female_population_2019 || 0,
-                  households: apiData.households || feature.properties.Households || 0,
-                  avg_hh_size: apiData.hh_size || apiData.avg_hh_size || feature.properties.Av_HH_Size || 0,
-                  area: apiData.area || feature.properties.Shape_Area || 0,
-                  // Keep original
+                  api_id: apiId,
                   county_name: countyName,
                 }
               };
@@ -76,18 +67,6 @@ export default function WardLayer({
         console.error('❌ Error loading county data:', err.message);
         setError(err.message);
         setLoading(false);
-        
-        // Fallback: Just load GeoJSON without API data
-        fetch('/data/kenya_counties_admin.geojson')
-          .then(res => res.json())
-          .then(geoJsonData => {
-            console.log('⚠️ Using fallback GeoJSON without API data');
-            setData(geoJsonData);
-            setLoading(false);
-          })
-          .catch(() => {
-            setLoading(false);
-          });
       });
   }, [visible]);
 
@@ -106,7 +85,7 @@ export default function WardLayer({
           borderRadius: '8px',
           fontSize: '12px',
         }}>
-          🏛️ Loading counties from API...
+          🏛️ Loading counties...
         </div>
       );
     }
@@ -115,7 +94,8 @@ export default function WardLayer({
 
   const getDefaultStyle = (feature) => {
     const featureName = feature.properties?.COUNTY || feature.properties?.COUNTY_NAM || '';
-    const isSelected = selectedFeature?.name === featureName;
+    const isSelected = selectedFeature?.name === featureName ||
+                       selectedFeature?.properties?.COUNTY === featureName;
     
     if (isSelected) {
       return {
@@ -146,7 +126,8 @@ export default function WardLayer({
 
     const props = feature.properties || {};
     const featureName = props.COUNTY || props.COUNTY_NAM || 'Unknown';
-    const isSelected = selectedFeature?.name === featureName;
+    const isSelected = selectedFeature?.name === featureName ||
+                       selectedFeature?.properties?.COUNTY === featureName;
 
     layer.on({
       mouseover: (e) => {
@@ -154,20 +135,10 @@ export default function WardLayer({
         layer.bringToFront();
         if (onHover) {
           onHover({
-            level: 'county',
-            name: featureName,
-            feature: feature,
             id: props.api_id,
-            // Pass all data for the side panel
-            properties: {
-              COUNTY: featureName,
-              Total_Population19: props.total_population || props.Total_Population19 || 0,
-              Male_populatio_2019: props.male_population || props.Male_populatio_2019 || 0,
-              Female_population_2019: props.female_population || props.Female_population_2019 || 0,
-              Households: props.households || props.Households || 0,
-              Av_HH_Size: props.avg_hh_size || props.Av_HH_Size || 0,
-              Shape_Area: props.area || props.Shape_Area || 0,
-            }
+            name: featureName,
+            properties: props,
+            feature: feature,
           });
         }
       },
@@ -189,25 +160,21 @@ export default function WardLayer({
         }
       },
       click: (e) => {
-        console.log(`📍 County clicked: ${featureName}`);
-        if (onHover) {
-          onHover({
-            level: 'county',
-            name: featureName,
-            feature: feature,
-            id: props.api_id,
-            isSelected: true,
-            // Pass all data for the side panel
-            properties: {
-              COUNTY: featureName,
-              Total_Population19: props.total_population || props.Total_Population19 || 0,
-              Male_populatio_2019: props.male_population || props.Male_populatio_2019 || 0,
-              Female_population_2019: props.female_population || props.Female_population_2019 || 0,
-              Households: props.households || props.Households || 0,
-              Av_HH_Size: props.avg_hh_size || props.Av_HH_Size || 0,
-              Shape_Area: props.area || props.Shape_Area || 0,
-            }
-          });
+        // Prevent any default behavior
+        e.originalEvent?.preventDefault?.();
+        e.originalEvent?.stopPropagation?.();
+        
+        const countyData = {
+          id: props.api_id || feature.id,
+          name: featureName,
+          properties: props,
+          feature: feature,
+        };
+        
+        console.log('🔵 County clicked:', countyData.name);
+        
+        if (onCountyClick) {
+          onCountyClick(countyData);
         }
       },
     });
@@ -232,9 +199,8 @@ export default function WardLayer({
       >
         <Tooltip sticky>
           {(feature) => {
-            const props = feature.properties || {};
-            const name = props.COUNTY || props.COUNTY_NAM || 'Unknown';
-            const pop = props.total_population || props.Total_Population19 || 0;
+            const name = feature.properties?.COUNTY || feature.properties?.COUNTY_NAM || 'Unknown';
+            const pop = feature.properties?.Total_Population19 || 0;
             return `
               <div style="font-size: 12px; max-width: 200px;">
                 <strong>🏛️ ${name}</strong>

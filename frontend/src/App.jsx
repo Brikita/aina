@@ -1,72 +1,91 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapContainer as LeafletMap, TileLayer } from 'react-leaflet';
+import { useAppContext } from './context/AppContext';
 import WardLayer from './components/Map/WardLayer';
-import SubCountyLayer from './components/Map/SubCountyLayer';
+import Legend from './components/Map/Legend';
 import LayerControlPanel from './components/Map/LayerControlPanel';
-import InfoPanel from './components/Map/InfoPanel';
-import AdminPanel from './components/Map/AdminPanel';
-import DrawControl from './components/Map/DrawControl';
-import WarningLayer from './components/Map/WarningLayer';
-import AssetLayer from './components/Map/AssetLayer';
-import DashboardStats from './components/Map/DashboardStats';
+import RoadsLayer from './components/Map/RoadsLayer';
+import RiversLayer from './components/Map/RiversLayer';
+import LivelihoodLayer from './components/Map/LivelihoodLayer';
 import IGADCountryLayer from './components/Map/IGADCountryLayer';
-import ContextPanel from './components/ContextPanel';
-import ImpactPanel from './components/Map/ImpactPanel';
-import RecommendationsPanel from './components/Map/RecommendationsPanel';
-import SimulationPanel from './components/Map/SimulationPanel';
-import AllocationsPanel from './components/Map/AllocationsPanel';
-import dataManager from './services/DataManager';
-import { zoomToFeature, zoomToKenya } from './utils/zoomUtils';
+import CustomDrawingsLayer from './components/Map/CustomDrawingsLayer';
+import DrawControl from './components/Map/DrawControl';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 export default function App() {
+  // Get state and functions from AppContext
+  const {
+    // Selected state
+    selectedCounty,
+    setSelectedCounty,
+    // Data
+    counties,
+    warnings,
+    assets,
+    // Decision intelligence
+    recommendations,
+    riskLevel,
+    isAnalyzing,
+    fetchDecisionIntelligence,
+    // Loading states
+    countiesLoading,
+    warningsLoading,
+    assetsLoading,
+  } = useAppContext();
+
   const [layers, setLayers] = useState({
     osm: true,
     satellite: false,
     dark: false,
     counties: true,
-    subcounties: false,
-    warnings: false,
-    assets: false,
+    roads: false,
+    rivers: false,
+    livelihood: false,
+    custom_drawings: false,
     ethiopia: true,
     sudan: true,
     south_sudan: true,
     uganda: true,
     somalia: true,
     djibouti: true,
-    osm_opacity: 1.0,
-    satellite_opacity: 1.0,
-    dark_opacity: 1.0,
-    counties_opacity: 1.0,
-    subcounties_opacity: 1.0,
-    warnings_opacity: 1.0,
-    assets_opacity: 1.0,
   });
   const [drawnFeatures, setDrawnFeatures] = useState(null);
-  const [selectedCounty, setSelectedCounty] = useState(null);
-  const [selectedSubCounty, setSelectedSubCounty] = useState(null);
-  const [infoData, setInfoData] = useState(null);
-  const [isInfoPanelVisible, setIsInfoPanelVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [showImpact, setShowImpact] = useState(false);
-  const [showRecommendations, setShowRecommendations] = useState(false);
-  const [showSimulation, setShowSimulation] = useState(false);
-  const [showAllocations, setShowAllocations] = useState(false);
-  const [warningId, setWarningId] = useState(null);
   const mapRef = useRef(null);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+  // Handle county click from the map
+  const handleCountyClick = (countyData) => {
+    console.log('📍 County clicked:', countyData);
+    
+    // Update selected county in context
+    setSelectedCounty(countyData);
+    
+    // Create region data for decision intelligence
+    const regionData = {
+      id: countyData.id || countyData.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+      name: countyData.name || countyData.properties?.COUNTY || 'Unknown',
+      hazardType: 'Flood',
+      severity: 'High',
+      context: `${countyData.name || countyData.properties?.COUNTY || 'County'} analysis requested`,
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    
+    // Fetch decision intelligence from API (or fallback)
+    fetchDecisionIntelligence(regionData);
+  };
+
+  // Handle county hover
+  const handleCountyHover = (countyData) => {
+    // Just log for now - could show preview
+    console.log('👆 Hovering:', countyData?.name);
+  };
 
   const handleDrawCreate = (layer) => {
     const geoJSON = layer.toGeoJSON ? layer.toGeoJSON() : layer;
     setDrawnFeatures(geoJSON);
+    setLayers(prev => ({
+      ...prev,
+      custom_drawings: true
+    }));
   };
 
   const handleDrawEdit = (layers) => {
@@ -76,6 +95,10 @@ export default function App() {
   const handleDrawDelete = (layers) => {
     if (!layers) {
       setDrawnFeatures(null);
+      setLayers(prev => ({
+        ...prev,
+        custom_drawings: false
+      }));
     }
   };
 
@@ -90,160 +113,18 @@ export default function App() {
     console.log('Settings clicked for:', layerId);
   };
 
-  const closeInfoPanel = () => {
-    setIsInfoPanelVisible(false);
-    setInfoData(null);
-  };
-
-  const openInfoPanel = () => {
-    setIsInfoPanelVisible(true);
-  };
-
-  const handleCountyHover = (data) => {
-    if (data) {
-      setInfoData(data);
-      setIsInfoPanelVisible(true);
-    }
-    if (data && data.isSelected) {
-      setSelectedCounty({
-        name: data.name,
-        feature: data.feature,
-        id: data.id,
-      });
-      setSelectedSubCounty(null);
-      setLayers(prev => ({
-        ...prev,
-        subcounties: true,
-      }));
-      
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 60);
-      }
-    }
-  };
-
-  const handleSubCountyHover = (data) => {
-    if (data) {
-      setInfoData(data);
-      setIsInfoPanelVisible(true);
-    }
-    if (data && data.isSelected) {
-      setSelectedSubCounty(data);
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 50);
-      }
-    }
-  };
-
-  const handleWarningClick = (warning) => {
-    setInfoData({
-      level: 'warning',
-      name: `${warning.hazard} - ${warning.county}`,
-      hazard: warning.hazard,
-      severity: warning.severity,
-      county: warning.county,
-      status: warning.status,
-      issued_at: warning.issued_at,
-    });
-    setIsInfoPanelVisible(true);
-    setWarningId(warning.id);
-    setShowImpact(true);
-    setShowRecommendations(true);
-    setShowSimulation(true);
-    setShowAllocations(true);
-  };
-
-  const handleAssetClick = (asset) => {
-    setInfoData({
-      level: 'asset',
-      name: asset.name || 'Unknown Asset',
-      type: asset.type || 'Unknown',
-      county: asset.county || 'Unknown',
-      capacity: asset.capacity || 'N/A',
-    });
-    setIsInfoPanelVisible(true);
-  };
-
-  const handleCountryHover = (data) => {
-    if (data) {
-      setInfoData({
-        level: 'country',
-        name: data.name,
-        country: data.country,
-        adminLevel: data.adminLevel || 'Region',
-        isSelected: data.isSelected || false,
-      });
-      setIsInfoPanelVisible(true);
-      
-      if (data.isSelected && data.feature && mapRef.current) {
-        zoomToFeature(data.feature, mapRef.current, 40);
-      }
-    }
-  };
-
-  const handleReset = () => {
-    setSelectedCounty(null);
-    setSelectedSubCounty(null);
-    setInfoData(null);
-    setIsInfoPanelVisible(false);
-    setShowImpact(false);
-    setShowRecommendations(false);
-    setShowSimulation(false);
-    setShowAllocations(false);
-    setWarningId(null);
-    setLayers(prev => ({
-      ...prev,
-      subcounties: false,
-    }));
-    
-    if (mapRef.current) {
-      zoomToKenya(mapRef.current);
-    }
-  };
-
-  const handleNavigate = (level, data) => {
-    if (level === 'root') {
-      handleReset();
-    } else if (level === 'county') {
-      setSelectedCounty(data);
-      setSelectedSubCounty(null);
-      setLayers(prev => ({
-        ...prev,
-        subcounties: true,
-      }));
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 60);
-      }
-    } else if (level === 'subcounty') {
-      setSelectedSubCounty(data);
-      if (mapRef.current && data.feature) {
-        zoomToFeature(data.feature, mapRef.current, 50);
-      }
-    }
-  };
-
-  const getSelectedFeature = () => {
-    if (selectedSubCounty) return selectedSubCounty.feature;
-    if (selectedCounty) return selectedCounty.feature;
-    return null;
-  };
-
-  const getSelectedLevel = () => {
-    if (selectedSubCounty) return 'subcounty';
-    if (selectedCounty) return 'county';
-    return null;
-  };
-
   return (
-    <div className="app-container">
-      <div className="map-wrapper">
+    <div style={{ height: '100vh', width: '100vw', display: 'flex' }}>
+      {/* Map Container */}
+      <div style={{ flex: 1, position: 'relative' }}>
         <LeafletMap
-          center={[5, 38]}
-          zoom={5}
+          center={[0.5, 38]}
+          zoom={6}
           style={{ height: '100%', width: '100%' }}
           zoomControl={false}
           ref={mapRef}
         >
+          {/* Basemap Tiles */}
           {layers.osm && (
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -266,174 +147,207 @@ export default function App() {
             />
           )}
 
-          <WardLayer 
-            visible={layers.counties} 
+          {/* Data Layers */}
+          <WardLayer
+            visible={layers.counties}
             onHover={handleCountyHover}
+            onCountyClick={handleCountyClick}
             selectedFeature={selectedCounty}
             opacity={layers.counties_opacity || 1.0}
           />
+          
+          <RoadsLayer visible={layers.roads} />
+          <RiversLayer visible={layers.rivers} />
+          <LivelihoodLayer visible={layers.livelihood} />
 
-          <SubCountyLayer 
-            visible={layers.subcounties}
-            countyName={selectedCounty?.name}
-            onHover={handleSubCountyHover}
-            selectedFeature={selectedSubCounty}
-            opacity={layers.subcounties_opacity || 1.0}
-          />
-
-          <WarningLayer 
-            visible={layers.warnings}
-            onWarningClick={handleWarningClick}
-          />
-
-          <AssetLayer 
-            visible={layers.assets}
-            countyFilter={selectedCounty?.name}
-            onAssetClick={handleAssetClick}
-          />
-
-          <IGADCountryLayer 
+          {/* IGAD Countries */}
+          <IGADCountryLayer
             countryKey="ethiopia"
             visible={layers.ethiopia}
-            onHover={handleCountryHover}
           />
-          <IGADCountryLayer 
+          <IGADCountryLayer
             countryKey="sudan"
             visible={layers.sudan}
-            onHover={handleCountryHover}
           />
-          <IGADCountryLayer 
+          <IGADCountryLayer
             countryKey="south_sudan"
             visible={layers.south_sudan}
-            onHover={handleCountryHover}
           />
-          <IGADCountryLayer 
+          <IGADCountryLayer
             countryKey="uganda"
             visible={layers.uganda}
-            onHover={handleCountryHover}
           />
-          <IGADCountryLayer 
+          <IGADCountryLayer
             countryKey="somalia"
             visible={layers.somalia}
-            onHover={handleCountryHover}
           />
-          <IGADCountryLayer 
+          <IGADCountryLayer
             countryKey="djibouti"
             visible={layers.djibouti}
-            onHover={handleCountryHover}
           />
 
-          <DrawControl 
+          <CustomDrawingsLayer data={drawnFeatures} visible={layers.custom_drawings} />
+
+          {/* Controls */}
+          <DrawControl
             onDrawCreate={handleDrawCreate}
             onDrawEdit={handleDrawEdit}
             onDrawDelete={handleDrawDelete}
           />
+
+          <LayerControlPanel
+            layers={layers}
+            setLayers={setLayers}
+            onOpacityChange={handleOpacityChange}
+            onLayerSettings={handleLayerSettings}
+          />
+
+          <Legend />
         </LeafletMap>
       </div>
 
-      <div className="ui-overlay">
-        <DashboardStats visible={true} isMobile={isMobile} />
+      {/* Decision Panel - Right Side */}
+      <div style={{
+        width: '380px',
+        minWidth: '380px',
+        height: '100vh',
+        overflowY: 'auto',
+        background: '#f8f9fa',
+        borderLeft: '1px solid #e0e0e0',
+        padding: '20px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif',
+      }}>
+        <h2 style={{ marginTop: 0, color: '#1a1a2e' }}>AINA v5.0</h2>
+        <p style={{ color: '#666', fontSize: '14px', marginTop: '-8px' }}>
+          Decision Intelligence Platform
+        </p>
+        <hr style={{ border: '0', borderTop: '1px solid #e0e0e0' }} />
 
-        <LayerControlPanel 
-          layers={layers}
-          setLayers={setLayers}
-          onOpacityChange={handleOpacityChange}
-          onLayerSettings={handleLayerSettings}
-          isMobile={isMobile}
-        />
-
-        <ContextPanel 
-          county={selectedCounty}
-          warning={infoData?.level === 'warning' ? infoData : null}
-          onAction={(action) => console.log('Action:', action)}
-          isMobile={isMobile}
-        />
-
-        <InfoPanel 
-          data={infoData}
-          isMobile={isMobile}
-          onClose={closeInfoPanel}
-        />
-
-        {!isInfoPanelVisible && (
-          <button
-            onClick={openInfoPanel}
-            style={{
-              position: 'fixed',
-              right: '20px',
-              top: '145px',
-              zIndex: 2000,
+        {selectedCounty ? (
+          <div>
+            {/* County Header */}
+            <div style={{
               background: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
-              width: '44px',
-              height: '44px',
-              fontSize: '20px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.35)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.25)'}
-            title="Open Info Panel"
-          >
-            ℹ️
-          </button>
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              marginBottom: '16px',
+            }}>
+              <h3 style={{ margin: 0, color: '#1a1a2e' }}>
+                📍 {selectedCounty.name || selectedCounty.properties?.COUNTY || 'Selected County'}
+              </h3>
+              {selectedCounty.properties && (
+                <div style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>
+                  <p style={{ margin: '4px 0' }}>
+                    <strong>Population:</strong> {selectedCounty.properties.Total_Population19?.toLocaleString() || 'N/A'}
+                  </p>
+                  <p style={{ margin: '4px 0' }}>
+                    <strong>Households:</strong> {selectedCounty.properties.Households?.toLocaleString() || 'N/A'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Decision Analysis */}
+            <div style={{
+              background: 'white',
+              padding: '16px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            }}>
+              <h4 style={{ margin: '0 0 12px', color: '#1a1a2e' }}>
+                🧠 Decision Analysis
+              </h4>
+
+              {isAnalyzing ? (
+                <div style={{ textAlign: 'center', padding: '20px' }}>
+                  <div style={{
+                    display: 'inline-block',
+                    width: '30px',
+                    height: '30px',
+                    border: '3px solid #e0e0e0',
+                    borderTop: '3px solid #1E90FF',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }} />
+                  <p style={{ color: '#666', marginTop: '10px' }}>Analyzing...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Risk Level */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 12px',
+                    background: riskLevel === 'High' ? '#fee' : 
+                               riskLevel === 'Medium' ? '#fff3cd' : '#d4edda',
+                    borderRadius: '6px',
+                    marginBottom: '12px',
+                  }}>
+                    <span style={{ fontWeight: 'bold' }}>Risk Level</span>
+                    <span style={{
+                      fontWeight: 'bold',
+                      color: riskLevel === 'High' ? '#dc3545' : 
+                             riskLevel === 'Medium' ? '#856404' : '#155724',
+                    }}>
+                      {riskLevel || 'Medium'}
+                    </span>
+                  </div>
+
+                  {/* Recommendations */}
+                  <h5 style={{ margin: '12px 0 8px', color: '#333' }}>Recommendations</h5>
+                  {recommendations && recommendations.length > 0 ? (
+                    <ul style={{ margin: 0, paddingLeft: '20px' }}>
+                      {recommendations.map((rec, index) => (
+                        <li key={index} style={{ marginBottom: '6px', color: '#333', fontSize: '13px' }}>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ color: '#999', fontSize: '13px' }}>
+                      No recommendations available. Click a county to generate.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px 20px',
+            color: '#999',
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗺️</div>
+            <h3 style={{ color: '#666' }}>Select a County</h3>
+            <p style={{ fontSize: '14px' }}>
+              Click on any county on the map to generate decision intelligence.
+            </p>
+          </div>
         )}
 
-        <AdminPanel 
-          selectedCounty={selectedCounty}
-          selectedSubCounty={selectedSubCounty}
-          onNavigate={handleNavigate}
-          onReset={handleReset}
-          isMobile={isMobile}
-        />
+        {/* Loading State */}
+        {countiesLoading && (
+          <div style={{
+            marginTop: '16px',
+            padding: '12px',
+            background: '#e3f2fd',
+            borderRadius: '6px',
+            fontSize: '13px',
+            color: '#1565c0',
+          }}>
+            Loading counties...
+          </div>
+        )}
 
-        <ImpactPanel 
-          visible={showImpact}
-          warningId={warningId}
-          onClose={() => setShowImpact(false)}
-          isMobile={isMobile}
-        />
-
-        <RecommendationsPanel
-          visible={showRecommendations}
-          warningId={warningId}
-          onClose={() => setShowRecommendations(false)}
-          isMobile={isMobile}
-        />
-
-        <SimulationPanel
-          visible={showSimulation}
-          warningId={warningId}
-          onClose={() => setShowSimulation(false)}
-          isMobile={isMobile}
-        />
-
-        <AllocationsPanel
-          visible={showAllocations}
-          warningId={warningId}
-          onClose={() => setShowAllocations(false)}
-          isMobile={isMobile}
-        />
-
-        <div style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          zIndex: 2000,
-          fontSize: '9px',
-          color: '#999',
-          background: 'rgba(255,255,255,0.8)',
-          padding: '4px 8px',
-          borderRadius: '4px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
-        }}>
-          Cache: {dataManager.size()}/{dataManager.MAX_CACHE_SIZE}
-        </div>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     </div>
   );
