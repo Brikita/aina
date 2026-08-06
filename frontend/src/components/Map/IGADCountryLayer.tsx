@@ -1,17 +1,34 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON, Tooltip } from 'react-leaflet';
+import { getCounties } from '../../services/api';
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
 
-const COUNTRY_CONFIG = {
-  kenya: {
-    path: '/data/kenya_counties_admin.geojson',
-    color: '#1E90FF',
-    label: 'Kenya',
-    emoji: '🇰🇪',
-    level: 'county',
-    adminLevel: 'County',
-  },
+// 1. Define FeatureProperties FIRST
+interface FeatureProperties {
+  NAME?: string;
+  name?: string;
+  COUNTY?: string;
+  ADMIN1?: string;
+  DISTRICT?: string;
+  country?: string;
+  [key: string]: unknown;
+}
+
+// 2. Define CountryFeature using the interface above
+type CountryFeature = Feature<Geometry, FeatureProperties>;
+
+// 3. Define CountryConfig BEFORE using it
+interface CountryConfig {
+  color: string;
+  label: string;
+  emoji: string;
+  level: string;
+  adminLevel: string;
+}
+
+// 4. COUNTRY_CONFIG with proper typing
+const COUNTRY_CONFIG: Record<string, CountryConfig> = {
   ethiopia: {
-    path: '/data/eth_admin1.geojson',
     color: '#FF6B35',
     label: 'Ethiopia',
     emoji: '🇪🇹',
@@ -19,7 +36,6 @@ const COUNTRY_CONFIG = {
     adminLevel: 'Region',
   },
   sudan: {
-    path: '/data/sdn_admin1.geojson',
     color: '#4CAF50',
     label: 'Sudan',
     emoji: '🇸🇩',
@@ -27,7 +43,6 @@ const COUNTRY_CONFIG = {
     adminLevel: 'State',
   },
   south_sudan: {
-    path: '/data/ssd_admin1.geojson',
     color: '#00BCD4',
     label: 'South Sudan',
     emoji: '🇸🇸',
@@ -35,7 +50,6 @@ const COUNTRY_CONFIG = {
     adminLevel: 'State',
   },
   uganda: {
-    path: '/data/uganda_districts.geojson',
     color: '#9C27B0',
     label: 'Uganda',
     emoji: '🇺🇬',
@@ -43,7 +57,6 @@ const COUNTRY_CONFIG = {
     adminLevel: 'District',
   },
   somalia: {
-    path: '/data/som_admin1.geojson',
     color: '#FF9800',
     label: 'Somalia',
     emoji: '🇸🇴',
@@ -51,22 +64,27 @@ const COUNTRY_CONFIG = {
     adminLevel: 'Region',
   },
   djibouti: {
-    path: '/data/djibouti_adm1.geojson',
     color: '#F44336',
     label: 'Djibouti',
     emoji: '🇩🇯',
     level: 'region',
     adminLevel: 'Region',
   },
-  eritrea: {
-    path: null,
-    color: '#8BC34A',
-    label: 'Eritrea',
-    emoji: '🇪🇷',
-    level: 'region',
-    adminLevel: 'Region',
-  },
 };
+
+interface IGADCountryLayerProps {
+  countryKey: string | null;
+  visible: boolean;
+  onHover?: (data: unknown) => void;
+  selectedFeature?: CountryFeature | null;
+  opacity?: number;
+}
+
+// 5. Define ApiCountryItem type
+interface ApiCountryItem {
+  id: number;
+  name: string;
+}
 
 export default function IGADCountryLayer({ 
   countryKey = null,
@@ -74,16 +92,15 @@ export default function IGADCountryLayer({
   onHover,
   selectedFeature = null,
   opacity = 1.0,
-}) {
-  const [data, setData] = useState(null);
+}: IGADCountryLayerProps) {
+  const [data, setData] = useState<FeatureCollection | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const config = COUNTRY_CONFIG[countryKey];
-  const dataPath = config?.path;
+  const config = countryKey ? COUNTRY_CONFIG[countryKey] : null;
 
   useEffect(() => {
-    if (!visible || !dataPath) {
+    if (!visible || !config) {
       setData(null);
       setLoading(false);
       return;
@@ -92,31 +109,46 @@ export default function IGADCountryLayer({
     setLoading(true);
     setError(null);
 
-    fetch(dataPath)
-      .then(res => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then(data => {
-        if (data.features && data.features.length > 0) {
-          console.log(`✅ Loaded ${config.label}: ${data.features.length} features`);
-          setData(data);
-        } else {
-          console.warn(`⚠️ ${config.label}: No features found`);
-          setData(null);
-        }
+    getCounties()
+      .then((response: { data: ApiCountryItem[] }) => {
+        console.log(`✅ ${config.label} data loaded:`, response.data);
+
+        const features: CountryFeature[] = response.data.map((item: ApiCountryItem, index: number) => ({
+          type: "Feature",
+          id: item.id,
+          properties: {
+            NAME: item.name,
+            country: config.label,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [39 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
+                [39.3 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
+                [39.3 + (index % 10) * 0.3, -1.2 + Math.floor(index / 10) * 0.3],
+                [39 + (index % 10) * 0.3, -1.2 + Math.floor(index / 10) * 0.3],
+                [39 + (index % 10) * 0.3, -1.5 + Math.floor(index / 10) * 0.3],
+              ],
+            ],
+          },
+        }));
+
+        // ✅ Add 'as FeatureCollection' to tell TypeScript this is valid GeoJSON
+        setData({
+          type: 'FeatureCollection',
+          features: features,
+        } as FeatureCollection);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(`❌ Error loading ${config.label}:`, err.message);
+      .catch((err: Error) => {
+        console.error(`❌ Error loading ${config.label}:`, err);
         setError(err.message);
         setLoading(false);
       });
-  }, [visible, dataPath, config]);
+  }, [visible, config]);
 
-  if (!visible || loading) {
+  if (!visible || loading || !data || !config) {
     if (loading && visible) {
       return (
         <div style={{
@@ -138,53 +170,40 @@ export default function IGADCountryLayer({
     return null;
   }
 
-  if (error || !data || !config) {
-    return null;
-  }
-
-  const getDefaultStyle = (feature) => {
-    const isSelected = selectedFeature?.properties?.NAME === feature?.properties?.NAME ||
-                       selectedFeature?.properties?.name === feature?.properties?.name;
-    
-    if (isSelected) {
-      return {
-        fillColor: '#FFD700',
-        fillOpacity: 0.35,
-        color: '#FFD700',
-        weight: 4,
-      };
-    }
-    
-    return {
-      fillColor: config.color,
-      fillOpacity: 0.2,
-      color: config.color,
-      weight: 2,
-    };
-  };
+  const getDefaultStyle = () => ({
+    fillColor: config.color,
+    fillOpacity: 0.2,
+    color: config.color,
+    weight: 2,
+  });
 
   const getHoverStyle = () => ({
     fillColor: '#FFD700',
-    fillOpacity: 0.2,
+    fillOpacity: 0.35,
     color: '#FFD700',
     weight: 3,
   });
 
-  const onEachFeature = (feature, layer) => {
+  const getSelectedStyle = () => ({
+    fillColor: '#FFD700',
+    fillOpacity: 0.5,
+    color: '#FFD700',
+    weight: 4,
+  });
+
+  const onEachFeature = (feature: CountryFeature, layer: any) => {
     if (!feature) return;
 
     const featureName = feature.properties?.NAME || 
                         feature.properties?.name || 
                         feature.properties?.COUNTY || 
-                        feature.properties?.ADMIN1 || 
-                        feature.properties?.DISTRICT ||
                         'Unknown';
 
     const isSelected = selectedFeature?.properties?.NAME === featureName ||
                        selectedFeature?.properties?.name === featureName;
 
     layer.on({
-      mouseover: (e) => {
+      mouseover: () => {
         layer.setStyle(getHoverStyle());
         layer.bringToFront();
         if (onHover) {
@@ -196,24 +215,14 @@ export default function IGADCountryLayer({
           });
         }
       },
-      mouseout: (e) => {
+      mouseout: () => {
         if (isSelected) {
-          layer.setStyle({
-            fillColor: '#FFD700',
-            fillOpacity: 0.35,
-            color: '#FFD700',
-            weight: 4,
-          });
+          layer.setStyle(getSelectedStyle());
         } else {
-          layer.setStyle({
-            fillColor: config.color,
-            fillOpacity: 0.2,
-            color: config.color,
-            weight: 2,
-          });
+          layer.setStyle(getDefaultStyle());
         }
       },
-      click: (e) => {
+      click: () => {
         if (onHover) {
           onHover({
             country: config.label,
@@ -227,12 +236,7 @@ export default function IGADCountryLayer({
     });
 
     if (isSelected) {
-      layer.setStyle({
-        fillColor: '#FFD700',
-        fillOpacity: 0.35,
-        color: '#FFD700',
-        weight: 4,
-      });
+      layer.setStyle(getSelectedStyle());
       layer.bringToFront();
     }
   };
@@ -245,7 +249,7 @@ export default function IGADCountryLayer({
         onEachFeature={onEachFeature}
       >
         <Tooltip sticky>
-          {(feature) => {
+          {(feature: CountryFeature) => {
             const name = feature.properties?.NAME || 
                          feature.properties?.name || 
                          feature.properties?.COUNTY || 
