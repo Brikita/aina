@@ -1,388 +1,184 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
 }
 
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  -webkit-tap-highlight-color: transparent;
-}
-
-#root {
-  height: 100%;
-  width: 100%;
-}
-
-.app-container {
-  height: 100vh;
-  width: 100vw;
+.hero {
   position: relative;
-  overflow: hidden;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
 }
 
-.map-wrapper {
-  position: absolute;
-  top: 0;
-  left: 0;
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
   width: 100%;
-  height: 100%;
-  z-index: 1;
-}
 
-.leaflet-container {
-  height: 100%;
-  width: 100%;
-  background: #f0f0f0;
-}
-
-.ui-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.ui-overlay > * {
-  pointer-events: auto;
-}
-
-/* ============================================
-   CONTEXT PANEL ANIMATIONS
-   ============================================ */
-
-@keyframes slideIn {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
   }
-}
-
-@keyframes slideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes progressBar {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
-}
-
-/* Context Panel Classes */
-.context-panel {
-  animation: slideIn 250ms ease-out;
-}
-
-.context-panel-closing {
-  animation: slideOut 200ms ease-in;
-}
-
-.tab-content {
-  animation: fadeIn 150ms ease-out;
-}
-
-.insight-strip {
-  animation: slideUp 200ms ease-out;
-}
-
-/* Skeleton Loading */
-.skeleton {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-.skeleton-text {
-  height: 12px;
-  background: #E5E7EB;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.skeleton-text-sm {
-  height: 10px;
-  background: #E5E7EB;
-  border-radius: 3px;
-  margin-bottom: 6px;
-  width: 60%;
-}
-
-.skeleton-text-lg {
-  height: 20px;
-  background: #E5E7EB;
-  border-radius: 4px;
-  margin-bottom: 12px;
-}
-
-.skeleton-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #E5E7EB;
-}
-
-.skeleton-rect {
-  height: 80px;
-  background: #E5E7EB;
-  border-radius: 8px;
-}
-
-/* ============================================
-   LEAFLET STYLES
-   ============================================ */
-
-.leaflet-draw-toolbar a {
-  background-image: url('https://unpkg.com/leaflet-draw@1.0.4/dist/images/spritesheet.png') !important;
-}
-
-.leaflet-control-fullscreen {
-  background: white !important;
-  border-radius: 4px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
-}
-
-.leaflet-control-fullscreen a {
-  color: #333 !important;
-  font-size: 18px !important;
-  padding: 8px 10px !important;
-}
-
-.leaflet-control-draw {
-  margin-top: 15px !important;
-}
-
-.leaflet-control-fullscreen {
-  margin-top: 15px !important;
-}
-
-.leaflet-control-attribution {
-  bottom: 0 !important;
-  font-size: 10px !important;
-  background: rgba(255,255,255,0.7) !important;
-  padding: 2px 6px !important;
-  border-radius: 4px 0 0 0 !important;
-}
-
-/* Desktop */
-@media (min-width: 1024px) {
-  .leaflet-control-draw {
-    margin-top: 20px !important;
-  }
-  .leaflet-control-fullscreen {
-    margin-top: 20px !important;
-  }
-}
-
-/* Tablet */
-@media (max-width: 1024px) and (min-width: 768px) {
-  .leaflet-control-draw {
-    margin-top: 15px !important;
-  }
-  .leaflet-control-fullscreen {
-    margin-top: 15px !important;
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .leaflet-control-draw {
-    margin-top: 10px !important;
-  }
-  .leaflet-control-fullscreen {
-    margin-top: 10px !important;
-  }
-  .leaflet-control-attribution {
-    font-size: 8px !important;
-    padding: 1px 4px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .leaflet-control-draw {
-    margin-top: 8px !important;
-  }
-  .leaflet-control-fullscreen {
-    margin-top: 8px !important;
-  }
-  .leaflet-touch .leaflet-control-zoom {
-    border: none !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
-  }
-}
-
-/* ============================================
-   SCROLLBAR
-   ============================================ */
-
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* ============================================
-   MOBILE TOUCH
-   ============================================ */
-
-@media (max-width: 768px) {
-  button, input[type="checkbox"], input[type="range"] {
-    touch-action: manipulation;
-  }
-  .leaflet-draw-toolbar a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-  }
-  .leaflet-touch .leaflet-control-draw .leaflet-draw-actions a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-  }
-}
-
-/* ============================================
-   CUSTOM MARKER STYLES
-   ============================================ */
-
-.custom-marker {
-  background: transparent;
-  border: none;
-}
-
-.cluster-marker {
-  background: transparent;
-  border: none;
-}
-
-.custom-marker:hover div {
-  transform: scale(1.3);
-  transition: transform 0.2s ease;
-}
-
-/* ============================================
-   PMTILES OVERLAY
-   ============================================ */
-
-#pmtiles-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-#pmtiles-overlay .maplibregl-canvas {
-  pointer-events: none;
-}
-
-#pmtiles-overlay .maplibregl-map {
-  background: transparent !important;
-}
-
-#pmtiles-overlay .maplibregl-map canvas {
-  opacity: 1 !important;
-}
-
-/* ============================================
-   PRINT
-   ============================================ */
-
-@media print {
-  .leaflet-control-container {
-    display: none !important;
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
   }
 }
